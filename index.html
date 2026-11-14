@@ -3,9 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>WPCS — Weenz Private Call System</title>
+  <title>WPCS — Weenz Private Call System (P2P)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- PeerJS untuk koneksi WebRTC Peer-to-Peer tanpa butuh Firebase -->
+  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
@@ -31,18 +33,11 @@
             'spin-slow': 'spin 28s linear infinite',
             'radar-sweep': 'spin 4s linear infinite',
             'pulse-glow': 'pulseGlow 4s ease-in-out infinite',
-            'float-up': 'floatUp 2.6s cubic-bezier(0.22, 1, 0.36, 1) forwards',
           },
           keyframes: {
             pulseGlow: {
               '0%, 100%': { opacity: '0.35', transform: 'scale(1)' },
               '50%': { opacity: '0.65', transform: 'scale(1.06)' },
-            },
-            floatUp: {
-              '0%': { opacity: '0', transform: 'translateY(10px) scale(0.6)' },
-              '15%': { opacity: '1', transform: 'translateY(-15px) scale(1.15)' },
-              '80%': { opacity: '1', transform: 'translateY(-130px) scale(1)' },
-              '100%': { opacity: '0', transform: 'translateY(-180px) scale(0.85)' },
             }
           }
         }
@@ -82,11 +77,8 @@
       background-position: 0 0, 18px 18px;
     }
 
-    .hud-corner {
-      position: relative;
-    }
-    .hud-corner::before,
-    .hud-corner::after {
+    .hud-corner { position: relative; }
+    .hud-corner::before, .hud-corner::after {
       content: '';
       position: absolute;
       width: 14px;
@@ -96,28 +88,17 @@
       transition: all 0.3s ease;
     }
     .hud-corner::before {
-      top: -1px;
-      left: -1px;
-      border-top: 2px solid;
-      border-left: 2px solid;
+      top: -1px; left: -1px;
+      border-top: 2px solid; border-left: 2px solid;
       border-top-left-radius: 14px;
     }
     .hud-corner::after {
-      bottom: -1px;
-      right: -1px;
-      border-bottom: 2px solid;
-      border-right: 2px solid;
+      bottom: -1px; right: -1px;
+      border-bottom: 2px solid; border-right: 2px solid;
       border-bottom-right-radius: 14px;
     }
 
-    ::-webkit-scrollbar { width: 5px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 99px; }
-    ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.28); }
-
-    .mirror-video {
-      transform: scaleX(-1);
-    }
+    .mirror-video { transform: scaleX(-1); }
   </style>
 </head>
 <body class="h-screen w-screen relative font-sans antialiased selection:bg-indigo-500/30">
@@ -154,7 +135,7 @@
 
           <div class="absolute top-3 left-3 glass-pill px-3 py-1 rounded-full flex items-center gap-2 text-xs text-slate-200">
             <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-            <span>WPCS Host Console</span>
+            <span>WPCS P2P Host Console</span>
           </div>
 
           <div class="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-3">
@@ -173,18 +154,18 @@
         <div>
           <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/15 border border-indigo-400/30 text-indigo-300 text-xs font-medium mb-2.5">
             <i data-lucide="shield-check" class="w-3.5 h-3.5 text-cyan-400"></i>
-            <span>WPCS • Host Location Telemetry</span>
+            <span>WPCS • Direct P2P Encrypted</span>
           </div>
           <h1 class="text-2xl md:text-3xl font-bold tracking-tight text-white">Weenz Private Call System</h1>
           <p class="text-slate-400 text-xs mt-1.5 leading-relaxed">
-            Buat ruang privat dengan kode sesi unik dan bagikan tautan undangan kepada peserta.
+            Koneksi Peer-to-Peer langsung tanpa server database. Buka ruang dan bagikan tautan ke peserta.
           </p>
         </div>
 
         <div class="space-y-3.5">
           <div>
             <label class="block text-xs font-medium text-slate-300 mb-1">Nama Tampilan Host</label>
-            <input id="user-name-input" type="text" value="Anda (Host)" class="w-full px-4 py-2.5 rounded-xl bg-obsidian-950/80 border border-white/10 text-sm text-white focus:outline-none focus:border-cyan-400/70 transition" />
+            <input id="user-name-input" type="text" value="Winsal (Host)" class="w-full px-4 py-2.5 rounded-xl bg-obsidian-950/80 border border-white/10 text-sm text-white focus:outline-none focus:border-cyan-400/70 transition" />
           </div>
 
           <label class="flex items-center justify-between p-3.5 rounded-xl bg-obsidian-950/60 border border-white/10 cursor-pointer">
@@ -192,7 +173,7 @@
               <i data-lucide="map-pin" class="w-4 h-4 text-cyan-400"></i>
               <div>
                 <span class="text-xs font-medium text-white block">Minta Izin Lokasi Undangan</span>
-                <span class="text-[10px] text-slate-400">Verifikasi koordinat GPS saat peserta bergabung</span>
+                <span class="text-[10px] text-slate-400">Kirim koordinat GPS peserta langsung ke Host</span>
               </div>
             </div>
             <input id="require-geo-toggle" type="checkbox" checked class="accent-cyan-400 w-4 h-4 rounded" />
@@ -227,7 +208,7 @@
         </div>
         <div class="p-3 rounded-xl bg-cyan-500/10 border border-cyan-400/20 text-[11px] text-cyan-200 flex items-start gap-2.5">
           <i data-lucide="shield-alert" class="w-4 h-4 shrink-0 text-cyan-400 mt-0.5"></i>
-          <span>Akses kamera & lokasi GPS diperlukan untuk verifikasi panggilan privat sesi ini.</span>
+          <span>Akses kamera, mikrofon & lokasi GPS diperlukan untuk terhubung langsung ke Host.</span>
         </div>
       </div>
 
@@ -242,10 +223,10 @@
   ========================================================== -->
   <main id="call-screen" class="hidden relative z-10 h-full w-full flex flex-col justify-between p-3 md:p-5">
     
-    <header class="relative z-30 flex items-center justify-between gap-3">
+    <header class="relative z-30 flex items-center justify-between gap-3 flex-wrap">
       <div class="glass-pill px-4 py-2 rounded-2xl flex items-center gap-3.5">
         <div class="flex items-center gap-2">
-          <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_10px_#34d399]"></span>
+          <span id="p2p-status-dot" class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"></span>
           <span class="font-bold text-sm tracking-wider text-white">WPCS</span>
           <span id="role-badge" class="text-[11px] px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-400/30 font-medium">HOST</span>
         </div>
@@ -261,12 +242,9 @@
       </div>
 
       <div class="flex items-center gap-2">
-        <button onclick="toggleSidebar('location')" class="glass-pill hover:bg-white/10 text-cyan-300 px-3 py-2 rounded-xl text-xs font-medium flex items-center gap-1.5 border-cyan-400/30 transition">
+        <button id="btn-location-sidebar" onclick="toggleSidebar()" class="glass-pill hover:bg-white/10 text-cyan-300 px-3 py-2 rounded-xl text-xs font-medium flex items-center gap-1.5 border-cyan-400/30 transition">
           <i data-lucide="radar" class="w-4 h-4"></i>
           <span>Lokasi Peserta</span>
-        </button>
-        <button onclick="swapVideos()" title="Ubah Ukuran PiP" class="glass-pill hover:bg-white/10 text-slate-200 p-2 rounded-xl transition">
-          <i data-lucide="arrow-left-right" class="w-4 h-4"></i>
         </button>
         <button onclick="toggleFullScreen()" title="Layar Penuh" class="glass-pill hover:bg-white/10 text-slate-200 p-2 rounded-xl transition">
           <i data-lucide="maximize-2" class="w-4 h-4"></i>
@@ -276,7 +254,16 @@
 
     <div id="video-stage" class="relative flex-1 my-3 rounded-3xl overflow-hidden border border-white/10 bg-obsidian-900/90 shadow-2xl hud-corner">
       
+      <!-- Remote Video Stream (Lawan Bicara) -->
       <div id="remote-container" class="absolute inset-0 w-full h-full flex flex-col items-center justify-center p-6 text-center overflow-hidden">
+        
+        <!-- Elemen Video Lawan Bicara -->
+        <video id="remote-video" autoplay playsinline class="hidden absolute inset-0 w-full h-full object-cover z-10"></video>
+        <div id="remote-name-tag" class="hidden absolute top-4 left-4 z-20 px-3 py-1 rounded-lg bg-black/60 backdrop-blur-md border border-white/10 text-xs font-medium text-cyan-300">
+          Terhubung dengan Peserta
+        </div>
+
+        <!-- Status Menunggu Koneksi P2P -->
         <div id="waiting-room-state" class="max-w-md flex flex-col items-center space-y-4 z-10">
           <div class="relative flex items-center justify-center w-24 h-24">
             <span class="absolute inset-0 rounded-full border border-cyan-400/30 animate-ping" style="animation-duration: 3s;"></span>
@@ -287,22 +274,24 @@
           </div>
 
           <div class="space-y-1.5">
-            <h2 class="text-lg sm:text-xl font-bold text-white">Menunggu Peserta Bergabung...</h2>
+            <h2 id="waiting-title" class="text-lg sm:text-xl font-bold text-white">Menyiapkan Jaringan P2P...</h2>
             <p class="text-xs sm:text-sm text-slate-400 leading-relaxed">
               Kode Sesi Unik: <span id="stage-room-code" class="font-mono text-cyan-300 font-bold">---</span>
             </p>
+            <p id="p2p-connection-msg" class="text-[11px] text-amber-300 font-mono">Menghubungkan ke broker P2P...</p>
           </div>
 
-          <button onclick="copyInviteLink()" class="mt-2 px-5 py-2.5 rounded-xl bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-400/40 text-cyan-300 text-xs font-semibold flex items-center gap-2 transition">
+          <button id="stage-copy-btn" onclick="copyInviteLink()" class="mt-2 px-5 py-2.5 rounded-xl bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-400/40 text-cyan-300 text-xs font-semibold flex items-center gap-2 transition">
             <i data-lucide="copy" class="w-4 h-4"></i>
             <span id="stage-copy-label">Salin Tautan Undangan Unik</span>
           </button>
         </div>
 
-        <div class="absolute inset-0 pointer-events-none bg-gradient-to-t from-obsidian-950/80 via-transparent to-obsidian-950/30"></div>
+        <div class="absolute inset-0 pointer-events-none bg-gradient-to-t from-obsidian-950/60 via-transparent to-obsidian-950/20 z-10"></div>
       </div>
 
-      <div id="pip-window" style="bottom: 20px; right: 20px;" class="absolute z-30 w-36 sm:w-48 md:w-56 aspect-video rounded-2xl overflow-hidden border-2 border-cyan-400/40 bg-obsidian-950 shadow-[0_15px_35px_rgba(0,0,0,0.75)] cursor-grab active:cursor-grabbing group">
+      <!-- PiP Video Lokal (Kamera Sendiri) -->
+      <div id="pip-window" style="bottom: 20px; right: 20px;" class="absolute z-30 w-36 sm:w-48 md:w-56 aspect-video rounded-2xl overflow-hidden border-2 border-cyan-400/40 bg-obsidian-950 shadow-[0_15px_35px_rgba(0,0,0,0.75)]">
         <video id="local-video" autoplay playsinline muted class="w-full h-full object-cover mirror-video"></video>
         
         <div id="local-video-off" class="hidden absolute inset-0 bg-gradient-to-br from-obsidian-800 to-obsidian-950 flex flex-col items-center justify-center">
@@ -316,13 +305,11 @@
           <span class="px-2 py-0.5 rounded-md bg-black/60 backdrop-blur-md text-[10px] font-medium text-white flex items-center gap-1">
             <span id="local-name-badge">Anda (Host)</span>
           </span>
-          <span id="local-mute-badge" class="hidden w-5 h-5 rounded-full bg-rose-500/90 flex items-center justify-center text-white">
-            <i data-lucide="mic-off" class="w-3 h-3"></i>
-          </span>
         </div>
       </div>
     </div>
 
+    <!-- Kontrol Panggilan Bawah -->
     <footer class="relative z-30 flex items-center justify-center">
       <div class="glass-panel px-3 sm:px-5 py-2.5 rounded-2xl sm:rounded-full flex items-center gap-1.5 sm:gap-2.5 flex-wrap justify-center">
         <button id="btn-mic" onclick="toggleMic()" class="w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition" title="Mikrofon">
@@ -338,15 +325,18 @@
       </div>
     </footer>
 
+    <!-- Sidebar Telemetri Lokasi GPS Peserta -->
     <aside id="side-panel" class="fixed top-4 right-4 bottom-24 w-[calc(100%-2rem)] sm:w-96 glass-panel rounded-3xl z-40 flex flex-col overflow-hidden translate-x-[120%] transition-transform duration-300">
-      <div class="p-3 border-b border-white/10 flex items-center justify-between">
-        <span class="text-xs font-semibold text-cyan-300">Lokasi Peserta Terhubung</span>
+      <div class="p-3.5 border-b border-white/10 flex items-center justify-between">
+        <span class="text-xs font-semibold text-cyan-300 flex items-center gap-1.5">
+          <i data-lucide="map-pin" class="w-3.5 h-3.5"></i> Telemetri Lokasi P2P
+        </span>
         <button onclick="closeSidebar()" class="p-1.5 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white">
           <i data-lucide="x" class="w-4 h-4"></i>
         </button>
       </div>
       <div class="flex-1 p-4 overflow-y-auto space-y-3" id="participant-locations-list">
-        <p class="text-xs text-slate-400 text-center py-4">Belum ada peserta terhubung.</p>
+        <p class="text-xs text-slate-400 text-center py-4">Belum ada data telemetri lokasi peserta.</p>
       </div>
     </aside>
   </main>
@@ -360,7 +350,21 @@
       camOn: true,
       userName: 'Host',
       isGuest: false,
-      roomCode: ''
+      roomCode: '',
+      peer: null,
+      currentCall: null,
+      dataConn: null
+    };
+
+    // Konfigurasi STUN Server Google agar tembus jaringan berbeda (Wi-Fi / Seluler)
+    const peerConfig = {
+      config: {
+        iceServers: [
+          { urls: 'stun:stun.l.google.com:19302' },
+          { urls: 'stun:stun1.l.google.com:19302' },
+          { urls: 'stun:stun2.l.google.com:19302' }
+        ]
+      }
     };
 
     function generateRoomCode() {
@@ -378,10 +382,10 @@
       const host = urlParams.get('host');
       const room = urlParams.get('room');
 
-      if (mode === 'participant' || host || room) {
+      if (mode === 'participant' || room) {
         state.isGuest = true;
-        state.roomCode = room ? room : 'Sesi Tamu';
-        document.getElementById('display-room-code').textContent = state.roomCode;
+        state.roomCode = room ? room : '';
+        document.getElementById('display-room-code').textContent = state.roomCode || 'Kode Tidak Valid';
         document.getElementById('lobby-screen').classList.add('hidden');
         document.getElementById('guest-lobby-screen').classList.remove('hidden');
       } else {
@@ -390,6 +394,9 @@
       }
     });
 
+    // =========================================================
+    // MEDIA LOKAL (KAMERA & MIKROFON)
+    // =========================================================
     async function initMediaHost() {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
@@ -406,11 +413,26 @@
         console.warn('Gagal akses kamera host:', err);
         const statusEl = document.getElementById('lobby-cam-status');
         if (statusEl) {
-          statusEl.innerHTML = `Izin kamera diblokir/tidak didukung.<br><span class="text-[10px] text-amber-400">Pastikan menggunakan HTTPS atau localhost.</span>`;
+          statusEl.innerHTML = `Izin kamera diblokir/tidak ditemukan.<br><span class="text-[10px] text-amber-400">Pastikan izin kamera aktif di browser.</span>`;
         }
       }
     }
 
+    function toggleLobbyMic() {
+      state.micOn = !state.micOn;
+      if (state.localStream) state.localStream.getAudioTracks().forEach(t => t.enabled = state.micOn);
+      document.getElementById('lobby-mic-btn').classList.toggle('bg-rose-600', !state.micOn);
+    }
+
+    function toggleLobbyCam() {
+      state.camOn = !state.camOn;
+      if (state.localStream) state.localStream.getVideoTracks().forEach(t => t.enabled = state.camOn);
+      document.getElementById('lobby-cam-btn').classList.toggle('bg-rose-600', !state.camOn);
+    }
+
+    // =========================================================
+    // 1. LOGIKA HOST (MEMBUKA RUANG P2P)
+    // =========================================================
     function startCall() {
       const nameInput = document.getElementById('user-name-input').value.trim();
       if (nameInput) state.userName = nameInput;
@@ -430,31 +452,109 @@
       document.getElementById('lobby-screen').classList.add('hidden');
       document.getElementById('call-screen').classList.remove('hidden');
       startCallTimer();
+
+      // Inisialisasi PeerJS dengan ID persis sama seperti state.roomCode
+      initHostPeer();
     }
 
+    function initHostPeer() {
+      updateConnectionUI('Menghubungkan ruang ke jaringan P2P...', false);
+      state.peer = new Peer(state.roomCode, peerConfig);
+
+      state.peer.on('open', (id) => {
+        updateConnectionUI('Ruang Aktif! Menunggu peserta membuka link...', true);
+        document.getElementById('waiting-title').textContent = 'Menunggu Peserta Bergabung...';
+      });
+
+      // Menerima panggilan video/audio masuk dari Peserta
+      state.peer.on('call', (incomingCall) => {
+        state.currentCall = incomingCall;
+        // Jawab panggilan dengan stream kamera/mic Host (jika ada, atau stream kosong)
+        const answerStream = state.localStream || createEmptyStream();
+        incomingCall.answer(answerStream);
+
+        incomingCall.on('stream', (remoteStream) => {
+          attachRemoteStream(remoteStream, 'Peserta Terhubung');
+        });
+
+        incomingCall.on('close', () => {
+          resetWaitingScreen('Peserta telah meninggalkan panggilan.');
+        });
+      });
+
+      // Menerima saluran data P2P (Nama & Lokasi GPS Peserta)
+      state.peer.on('connection', (conn) => {
+        state.dataConn = conn;
+        conn.on('data', (data) => {
+          if (data.type === 'TELEMETRY') {
+            document.getElementById('remote-name-tag').textContent = data.name;
+            renderParticipantLocation(data);
+          }
+        });
+      });
+
+      state.peer.on('error', (err) => {
+        console.error('PeerJS Host Error:', err);
+        updateConnectionUI('Galat P2P: ' + err.type, false);
+      });
+    }
+
+    // =========================================================
+    // 2. LOGIKA PESERTA / GUEST (MENGHUBUNGI HOST P2P)
+    // =========================================================
     async function joinAsGuest() {
       const nameInputEl = document.getElementById('guest-name-input');
       const guestName = nameInputEl ? nameInputEl.value.trim() : '';
       
       if (!guestName) {
-        alert('Mohon masukkan nama Anda terlebih dahulu.');
+        alert('Mohon masukkan nama lengkap Anda terlebih dahulu.');
         return;
       }
+      if (!state.roomCode) {
+        alert('Kode ruangan tidak ditemukan pada tautan undangan.');
+        return;
+      }
+
+      const btn = document.getElementById('join-guest-btn');
+      btn.disabled = true;
+      btn.textContent = 'Meminta Izin Kamera & Lokasi...';
+
       state.userName = guestName;
       document.getElementById('local-name-badge').textContent = state.userName;
       document.getElementById('local-initials').textContent = state.userName.slice(0, 2).toUpperCase();
       document.getElementById('role-badge').textContent = 'PESERTA';
+      document.getElementById('stage-room-code').textContent = state.roomCode;
       
       const copyBtn = document.getElementById('copy-link-btn');
       if (copyBtn) copyBtn.style.display = 'none';
+      const stageCopyBtn = document.getElementById('stage-copy-btn');
+      if (stageCopyBtn) stageCopyBtn.style.display = 'none';
 
+      // 1. Minta izin Kamera & Mikrofon
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
         state.localStream = stream;
         state.camOn = true;
       } catch (err) {
         state.camOn = false;
-        alert('Izin kamera/mikrofon diperlukan untuk bergabung. Pastikan Anda memberikan izin akses pada peramban.');
+        console.warn('Kamera tidak tersedia/ditolak:', err);
+      }
+
+      // 2. Ambil koordinat GPS (jika diizinkan perangkat)
+      let geoCoords = null;
+      if ('geolocation' in navigator) {
+        try {
+          const pos = await new Promise((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 6000 });
+          });
+          geoCoords = {
+            lat: pos.coords.latitude.toFixed(6),
+            lng: pos.coords.longitude.toFixed(6),
+            acc: Math.round(pos.coords.accuracy)
+          };
+        } catch (geoErr) {
+          console.warn('Lokasi GPS dilewati/ditolak:', geoErr);
+        }
       }
 
       const localVideo = document.getElementById('local-video');
@@ -469,6 +569,123 @@
       document.getElementById('guest-lobby-screen').classList.add('hidden');
       document.getElementById('call-screen').classList.remove('hidden');
       startCallTimer();
+
+      // 3. Hubungkan langsung ke Peer ID milik Host (state.roomCode)
+      connectGuestToHost(geoCoords);
+    }
+
+    function connectGuestToHost(geoCoords) {
+      document.getElementById('waiting-title').textContent = 'Menghubungi Ruang Host...';
+      updateConnectionUI('Mencari Host sesi ' + state.roomCode + '...', false);
+
+      // Peserta membuat ID acak otomatis
+      state.peer = new Peer(peerConfig);
+
+      state.peer.on('open', () => {
+        // Buka koneksi data untuk mengirim Nama & GPS ke Host
+        const conn = state.peer.connect(state.roomCode, { reliable: true });
+        state.dataConn = conn;
+        conn.on('open', () => {
+          conn.send({
+            type: 'TELEMETRY',
+            name: state.userName,
+            geo: geoCoords,
+            time: new Date().toLocaleTimeString('id-ID')
+          });
+        });
+
+        // Mulai panggilan video P2P ke Host
+        const callStream = state.localStream || createEmptyStream();
+        const call = state.peer.call(state.roomCode, callStream);
+        state.currentCall = call;
+
+        call.on('stream', (hostStream) => {
+          attachRemoteStream(hostStream, 'Host Terhubung');
+        });
+
+        call.on('close', () => {
+          resetWaitingScreen('Host telah mengakhiri panggilan.');
+        });
+      });
+
+      state.peer.on('error', (err) => {
+        console.error('PeerJS Guest Error:', err);
+        if (err.type === 'peer-unavailable') {
+          document.getElementById('waiting-title').textContent = 'Ruang Host Tidak Ditemukan';
+          updateConnectionUI('Pastikan Host sudah membuka ruang & menekan "Mulai Ruang WPCS Host".', false);
+        } else {
+          updateConnectionUI('Gagal terhubung: ' + err.type, false);
+        }
+      });
+    }
+
+    // =========================================================
+    // TAMPILAN VIDEO & TELEMETRI
+    // =========================================================
+    function attachRemoteStream(stream, label) {
+      const remoteVideo = document.getElementById('remote-video');
+      const waitingState = document.getElementById('waiting-room-state');
+      const nameTag = document.getElementById('remote-name-tag');
+
+      remoteVideo.srcObject = stream;
+      remoteVideo.classList.remove('hidden');
+      waitingState.classList.add('hidden');
+      nameTag.textContent = label;
+      nameTag.classList.remove('hidden');
+
+      updateConnectionUI('Terhubung P2P', true);
+    }
+
+    function resetWaitingScreen(message) {
+      document.getElementById('remote-video').classList.add('hidden');
+      document.getElementById('remote-name-tag').classList.add('hidden');
+      document.getElementById('waiting-room-state').classList.remove('hidden');
+      document.getElementById('waiting-title').textContent = message;
+      updateConnectionUI('Menunggu koneksi...', false);
+    }
+
+    function updateConnectionUI(msg, isConnected) {
+      const msgEl = document.getElementById('p2p-connection-msg');
+      const dotEl = document.getElementById('p2p-status-dot');
+      if (msgEl) msgEl.textContent = msg;
+      if (dotEl) {
+        dotEl.className = isConnected
+          ? 'w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_10px_#34d399]'
+          : 'w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse';
+      }
+    }
+
+    function renderParticipantLocation(data) {
+      const list = document.getElementById('participant-locations-list');
+      const geoHtml = data.geo
+        ? `<div class="mt-2 pt-2 border-t border-white/10 text-[11px] font-mono text-cyan-300 space-y-1">
+             <div>Lat: ${data.geo.lat} | Lng: ${data.geo.lng}</div>
+             <div class="text-slate-400">Akurasi: ±${data.geo.acc}m • ${data.time}</div>
+             <a href="https://maps.google.com/?q=${data.geo.lat},${data.geo.lng}" target="_blank" class="inline-block mt-1 px-2.5 py-1 rounded bg-cyan-500/20 text-cyan-200 hover:bg-cyan-500/30 transition">
+               Buka di Google Maps ↗
+             </a>
+           </div>`
+        : `<div class="mt-1.5 text-[11px] text-amber-400">Izin GPS tidak diberikan oleh peserta.</div>`;
+
+      list.innerHTML = `
+        <div class="p-3.5 rounded-2xl bg-obsidian-950/80 border border-cyan-400/30">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-white">${data.name}</span>
+            <span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[10px]">P2P Aktif</span>
+          </div>
+          ${geoHtml}
+        </div>
+      `;
+    }
+
+    // Stream cadangan jika salah satu pihak tidak punya kamera fisik
+    function createEmptyStream() {
+      const canvas = document.createElement('canvas');
+      canvas.width = 640; canvas.height = 480;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#0D111A';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      return canvas.captureStream(15);
     }
 
     function copyInviteLink() {
@@ -477,7 +694,11 @@
       
       if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(link).then(() => {
-          alert('Tautan undangan unik berhasil disalin!');
+          const lbl = document.getElementById('copy-link-label');
+          if (lbl) {
+            lbl.textContent = 'Tautan Tersalin!';
+            setTimeout(() => lbl.textContent = 'Salin Link Undangan', 2500);
+          }
         });
       }
     }
@@ -485,26 +706,30 @@
     function toggleMic() {
       state.micOn = !state.micOn;
       if (state.localStream) state.localStream.getAudioTracks().forEach(t => t.enabled = state.micOn);
-      const btn = document.getElementById('btn-mic');
-      btn.classList.toggle('bg-rose-600', !state.micOn);
+      document.getElementById('btn-mic').classList.toggle('bg-rose-600', !state.micOn);
     }
 
     function toggleCam() {
       state.camOn = !state.camOn;
       if (state.localStream) state.localStream.getVideoTracks().forEach(t => t.enabled = state.camOn);
-      const offOverlay = document.getElementById('local-video-off');
-      offOverlay.classList.toggle('hidden', state.camOn);
-      const btn = document.getElementById('btn-cam');
-      btn.classList.toggle('bg-rose-600', !state.camOn);
+      document.getElementById('local-video-off').classList.toggle('hidden', state.camOn);
+      document.getElementById('btn-cam').classList.toggle('bg-rose-600', !state.camOn);
     }
 
     function toggleSidebar() {
-      const panel = document.getElementById('side-panel');
-      panel.classList.toggle('translate-x-[120%]');
+      document.getElementById('side-panel').classList.toggle('translate-x-[120%]');
     }
 
     function closeSidebar() {
       document.getElementById('side-panel').classList.add('translate-x-[120%]');
+    }
+
+    function toggleFullScreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        document.exitFullscreen().catch(() => {});
+      }
     }
 
     function startCallTimer() {
@@ -518,6 +743,8 @@
     }
 
     function endCall() {
+      if (state.currentCall) state.currentCall.close();
+      if (state.peer) state.peer.destroy();
       if (state.localStream) state.localStream.getTracks().forEach(t => t.stop());
       location.href = window.location.pathname;
     }
