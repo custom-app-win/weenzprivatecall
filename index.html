@@ -126,19 +126,6 @@
   <div class="fixed inset-0 pointer-events-none z-0 overflow-hidden bg-obsidian-950 bg-ornament-grid">
     <div class="absolute -top-32 -left-32 w-[480px] h-[480px] rounded-full bg-indigo-600/20 blur-[120px] animate-pulse-glow"></div>
     <div class="absolute -bottom-40 -right-28 w-[520px] h-[520px] rounded-full bg-cyan-500/15 blur-[130px] animate-pulse-glow" style="animation-delay: 2s;"></div>
-
-    <svg class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[780px] h-[780px] opacity-[0.07] animate-spin-slow" viewBox="0 0 600 600" fill="none">
-      <circle cx="300" cy="300" r="280" stroke="url(#grad1)" stroke-width="1" stroke-dasharray="6 10" />
-      <circle cx="300" cy="300" r="220" stroke="url(#grad1)" stroke-width="0.8" />
-      <polygon points="300,30 534,435 66,435" stroke="#38BDF8" stroke-width="0.7" />
-      <polygon points="300,570 66,165 534,165" stroke="#818CF8" stroke-width="0.7" />
-      <defs>
-        <linearGradient id="grad1" x1="0" y1="0" x2="600" y2="600">
-          <stop offset="0%" stop-color="#6366F1" />
-          <stop offset="100%" stop-color="#22D3EE" />
-        </linearGradient>
-      </defs>
-    </svg>
   </div>
 
   <!-- =========================================================
@@ -152,14 +139,17 @@
         <div class="relative aspect-video w-full rounded-2xl overflow-hidden bg-obsidian-900 border border-white/10 shadow-2xl group">
           <video id="lobby-video" autoplay playsinline muted class="w-full h-full object-cover mirror-video hidden"></video>
           
-          <div id="lobby-fallback" class="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-obsidian-800 to-obsidian-950">
+          <div id="lobby-fallback" class="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-obsidian-800 to-obsidian-950 p-4 text-center">
             <div class="relative">
               <div class="absolute -inset-3 rounded-full bg-gradient-to-tr from-indigo-500 to-cyan-400 opacity-30 blur-md animate-pulse"></div>
               <div class="w-20 h-20 rounded-full bg-obsidian-800 border border-white/15 flex items-center justify-center text-2xl font-bold text-cyan-300 relative z-10">
                 HS
               </div>
             </div>
-            <p id="lobby-cam-status" class="mt-3 text-xs text-slate-400">Menyiapkan pratinjau kamera Host...</p>
+            <p id="lobby-cam-status" class="mt-3 text-xs text-slate-300">Menyiapkan pratinjau kamera Host...</p>
+            <button onclick="initMediaHost()" class="mt-3 px-3 py-1.5 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 text-xs border border-cyan-400/30 transition">
+              Izinkan Kamera Manual
+            </button>
           </div>
 
           <div class="absolute top-3 left-3 glass-pill px-3 py-1 rounded-full flex items-center gap-2 text-xs text-slate-200">
@@ -197,7 +187,6 @@
             <input id="user-name-input" type="text" value="Anda (Host)" class="w-full px-4 py-2.5 rounded-xl bg-obsidian-950/80 border border-white/10 text-sm text-white focus:outline-none focus:border-cyan-400/70 transition" />
           </div>
 
-          <!-- Toggle Verifikasi Lokasi Wajib bagi Undangan -->
           <label class="flex items-center justify-between p-3.5 rounded-xl bg-obsidian-950/60 border border-white/10 cursor-pointer">
             <div class="flex items-center gap-2.5">
               <i data-lucide="map-pin" class="w-4 h-4 text-cyan-400"></i>
@@ -238,11 +227,11 @@
         </div>
         <div class="p-3 rounded-xl bg-cyan-500/10 border border-cyan-400/20 text-[11px] text-cyan-200 flex items-start gap-2.5">
           <i data-lucide="shield-alert" class="w-4 h-4 shrink-0 text-cyan-400 mt-0.5"></i>
-          <span>Akses kamera & lokasi GPS Anda diperlukan untuk verifikasi wilayah panggilan privat sesi ini.</span>
+          <span>Akses kamera & lokasi GPS diperlukan untuk verifikasi panggilan privat sesi ini.</span>
         </div>
       </div>
 
-      <button onclick="joinAsGuest()" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-indigo-600 to-cyan-500 hover:from-indigo-500 hover:to-cyan-400 text-white font-semibold text-sm shadow-lg transition">
+      <button id="join-guest-btn" onclick="joinAsGuest()" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-indigo-600 to-cyan-500 hover:from-indigo-500 hover:to-cyan-400 text-white font-semibold text-sm shadow-lg transition">
         Izinkan Kamera & Gabung Panggilan
       </button>
     </div>
@@ -253,7 +242,6 @@
   ========================================================== -->
   <main id="call-screen" class="hidden relative z-10 h-full w-full flex flex-col justify-between p-3 md:p-5">
     
-    <!-- TOP BAR -->
     <header class="relative z-30 flex items-center justify-between gap-3">
       <div class="glass-pill px-4 py-2 rounded-2xl flex items-center gap-3.5">
         <div class="flex items-center gap-2">
@@ -272,15 +260,10 @@
         </button>
       </div>
 
-      <div id="recording-badge" class="hidden glass-pill px-3.5 py-1.5 rounded-full border-rose-500/40 flex items-center gap-2 text-xs font-mono text-rose-400">
-        <span class="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>
-        <span>REC <span id="rec-timer">00:00</span></span>
-      </div>
-
       <div class="flex items-center gap-2">
         <button onclick="toggleSidebar('location')" class="glass-pill hover:bg-white/10 text-cyan-300 px-3 py-2 rounded-xl text-xs font-medium flex items-center gap-1.5 border-cyan-400/30 transition">
           <i data-lucide="radar" class="w-4 h-4"></i>
-          <span class="hidden sm:inline">Lokasi Peserta (<span id="participant-count">0</span>)</span>
+          <span>Lokasi Peserta</span>
         </button>
         <button onclick="swapVideos()" title="Ubah Ukuran PiP" class="glass-pill hover:bg-white/10 text-slate-200 p-2 rounded-xl transition">
           <i data-lucide="arrow-left-right" class="w-4 h-4"></i>
@@ -291,10 +274,8 @@
       </div>
     </header>
 
-    <!-- MAIN STAGE -->
     <div id="video-stage" class="relative flex-1 my-3 rounded-3xl overflow-hidden border border-white/10 bg-obsidian-900/90 shadow-2xl hud-corner">
       
-      <!-- 1. LAYAR UTAMA -->
       <div id="remote-container" class="absolute inset-0 w-full h-full flex flex-col items-center justify-center p-6 text-center overflow-hidden">
         <div id="waiting-room-state" class="max-w-md flex flex-col items-center space-y-4 z-10">
           <div class="relative flex items-center justify-center w-24 h-24">
@@ -321,8 +302,7 @@
         <div class="absolute inset-0 pointer-events-none bg-gradient-to-t from-obsidian-950/80 via-transparent to-obsidian-950/30"></div>
       </div>
 
-      <!-- 2. VIDEO ANDA (PiP) -->
-      <div id="pip-window" style="bottom: 20px; right: 20px;" class="absolute z-30 w-36 sm:w-48 md:w-56 aspect-video rounded-2xl overflow-hidden border-2 border-cyan-400/40 bg-obsidian-950 shadow-[0_15px_35px_rgba(0,0,0,0.75)] cursor-grab active:cursor-grabbing group transition-shadow hover:border-cyan-400/80">
+      <div id="pip-window" style="bottom: 20px; right: 20px;" class="absolute z-30 w-36 sm:w-48 md:w-56 aspect-video rounded-2xl overflow-hidden border-2 border-cyan-400/40 bg-obsidian-950 shadow-[0_15px_35px_rgba(0,0,0,0.75)] cursor-grab active:cursor-grabbing group">
         <video id="local-video" autoplay playsinline muted class="w-full h-full object-cover mirror-video"></video>
         
         <div id="local-video-off" class="hidden absolute inset-0 bg-gradient-to-br from-obsidian-800 to-obsidian-950 flex flex-col items-center justify-center">
@@ -334,7 +314,6 @@
 
         <div class="absolute top-2 left-2 right-2 flex items-center justify-between pointer-events-none">
           <span class="px-2 py-0.5 rounded-md bg-black/60 backdrop-blur-md text-[10px] font-medium text-white flex items-center gap-1">
-            <i data-lucide="move" class="w-2.5 h-2.5 text-cyan-400"></i>
             <span id="local-name-badge">Anda (Host)</span>
           </span>
           <span id="local-mute-badge" class="hidden w-5 h-5 rounded-full bg-rose-500/90 flex items-center justify-center text-white">
@@ -342,198 +321,46 @@
           </span>
         </div>
       </div>
-
-      <div id="reactions-layer" class="absolute inset-0 pointer-events-none z-40 overflow-hidden"></div>
-      <div id="hand-raised-banner" class="hidden absolute top-4 left-1/2 -translate-x-1/2 z-30 glass-pill px-4 py-1.5 rounded-full border-amber-400/50 flex items-center gap-2 text-xs text-amber-300 shadow-lg">
-        <span>✋</span>
-        <span>Anda mengangkat tangan</span>
-      </div>
     </div>
 
-    <!-- BOTTOM CONTROL BAR -->
     <footer class="relative z-30 flex items-center justify-center">
       <div class="glass-panel px-3 sm:px-5 py-2.5 rounded-2xl sm:rounded-full flex items-center gap-1.5 sm:gap-2.5 flex-wrap justify-center">
-        
-        <button id="btn-mic" onclick="toggleMic()" class="control-btn w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition" title="Mikrofon">
+        <button id="btn-mic" onclick="toggleMic()" class="w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition" title="Mikrofon">
           <i data-lucide="mic" class="w-5 h-5"></i>
         </button>
-
-        <button id="btn-cam" onclick="toggleCam()" class="control-btn w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition" title="Kamera">
+        <button id="btn-cam" onclick="toggleCam()" class="w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition" title="Kamera">
           <i data-lucide="video" class="w-5 h-5"></i>
         </button>
-
-        <button id="btn-screen" onclick="toggleScreenShare()" class="control-btn w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition" title="Bagikan Layar">
-          <i data-lucide="monitor-up" class="w-5 h-5"></i>
-        </button>
-
-        <button id="btn-record" onclick="toggleRecording()" class="control-btn w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition" title="Rekam Panggilan">
-          <i data-lucide="disc" class="w-5 h-5"></i>
-        </button>
-
-        <div class="h-6 w-[1px] bg-white/10 mx-1 hidden sm:block"></div>
-
-        <button id="btn-radar" onclick="toggleSidebar('location')" class="w-11 h-11 rounded-full bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/40 text-cyan-300 flex items-center justify-center transition" title="Radar Lokasi Peserta">
-          <i data-lucide="map-pin" class="w-5 h-5"></i>
-        </button>
-
-        <div class="relative">
-          <button onclick="toggleReactionPicker()" class="w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition" title="Kirim Reaksi">
-            <i data-lucide="smile" class="w-5 h-5"></i>
-          </button>
-          <div id="reaction-picker" class="hidden absolute bottom-14 left-1/2 -translate-x-1/2 glass-panel px-3 py-2 rounded-2xl flex items-center gap-2 shadow-2xl">
-            <button onclick="sendReaction('👍')" class="text-xl hover:scale-125 transition">👍</button>
-            <button onclick="sendReaction('❤️')" class="text-xl hover:scale-125 transition">❤️</button>
-            <button onclick="sendReaction('🔥')" class="text-xl hover:scale-125 transition">🔥</button>
-            <button onclick="sendReaction('👏')" class="text-xl hover:scale-125 transition">👏</button>
-            <button onclick="sendReaction('🎉')" class="text-xl hover:scale-125 transition">🎉</button>
-          </div>
-        </div>
-
-        <button id="btn-hand" onclick="toggleHand()" class="w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition" title="Angkat Tangan">
-          <i data-lucide="hand" class="w-5 h-5"></i>
-        </button>
-
-        <button id="btn-sidebar" onclick="toggleSidebar('chat')" class="relative w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition" title="Obrolan Privat">
-          <i data-lucide="message-square" class="w-5 h-5"></i>
-        </button>
-
-        <div class="h-6 w-[1px] bg-white/10 mx-1"></div>
-
-        <button onclick="endCall()" class="h-11 px-5 rounded-full bg-rose-600 hover:bg-rose-500 text-white font-semibold text-sm flex items-center gap-2 shadow-lg shadow-rose-600/30 transition transform active:scale-95">
+        <button onclick="endCall()" class="h-11 px-5 rounded-full bg-rose-600 hover:bg-rose-500 text-white font-semibold text-sm flex items-center gap-2 shadow-lg transition">
           <i data-lucide="phone-off" class="w-4 h-4"></i>
-          <span class="hidden md:inline">Akhiri</span>
+          <span>Akhiri</span>
         </button>
       </div>
     </footer>
 
-    <!-- SIDEBAR SLIDE-OVER -->
     <aside id="side-panel" class="fixed top-4 right-4 bottom-24 w-[calc(100%-2rem)] sm:w-96 glass-panel rounded-3xl z-40 flex flex-col overflow-hidden translate-x-[120%] transition-transform duration-300">
-      <div class="p-3 border-b border-white/10 flex items-center justify-between gap-2">
-        <div class="flex bg-obsidian-950/80 p-1 rounded-xl border border-white/5 flex-1">
-          <button id="tab-btn-location" onclick="switchSidebarTab('location')" class="flex-1 py-1.5 px-2.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 bg-cyan-500/20 text-cyan-300 border border-cyan-400/30 transition">
-            <i data-lucide="radar" class="w-3.5 h-3.5"></i>
-            <span>Lokasi Peserta</span>
-          </button>
-          <button id="tab-btn-chat" onclick="switchSidebarTab('chat')" class="flex-1 py-1.5 px-2.5 rounded-lg text-xs font-medium flex items-center justify-center gap-1.5 text-slate-400 hover:text-white transition">
-            <i data-lucide="messages-square" class="w-3.5 h-3.5"></i>
-            <span>Chat</span>
-          </button>
-        </div>
+      <div class="p-3 border-b border-white/10 flex items-center justify-between">
+        <span class="text-xs font-semibold text-cyan-300">Lokasi Peserta Terhubung</span>
         <button onclick="closeSidebar()" class="p-1.5 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white">
           <i data-lucide="x" class="w-4 h-4"></i>
         </button>
       </div>
-
-      <!-- TAB 1: RADAR LOKASI -->
-      <div id="tab-content-location" class="flex-1 overflow-y-auto p-4 space-y-4">
-        <div class="relative rounded-2xl bg-obsidian-950 border border-cyan-500/25 p-4 overflow-hidden">
-          <div class="flex items-center justify-between text-[11px] text-slate-400 mb-2">
-            <span class="flex items-center gap-1.5 text-cyan-300 font-medium">
-              <span class="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
-              WPCS Geo-Radar Aktif
-            </span>
-            <span id="host-gps-status" class="font-mono text-[10px] text-emerald-400">GPS: Aktif</span>
-          </div>
-
-          <div class="relative h-40 w-full flex items-center justify-center my-1">
-            <svg viewBox="0 0 260 150" class="w-full h-full">
-              <circle cx="130" cy="75" r="65" fill="none" stroke="rgba(34,211,238,0.18)" stroke-width="1" />
-              <circle cx="130" cy="75" r="42" fill="none" stroke="rgba(34,211,238,0.18)" stroke-width="1" stroke-dasharray="3 3" />
-              <circle cx="130" cy="75" r="20" fill="none" stroke="rgba(34,211,238,0.22)" stroke-width="1" />
-              <line x1="60" y1="75" x2="200" y2="75" stroke="rgba(255,255,255,0.08)" stroke-width="1" />
-              <line x1="130" y1="5" x2="130" y2="145" stroke="rgba(255,255,255,0.08)" stroke-width="1" />
-              <circle cx="130" cy="75" r="4.5" fill="#38BDF8" />
-              <text x="130" y="92" text-anchor="middle" fill="#94A3B8" font-size="8" font-family="monospace">PUSAT</text>
-            </svg>
-          </div>
-          <p id="host-coords-text" class="text-[10px] font-mono text-center text-slate-400">Mendeteksi koordinat...</p>
-        </div>
-
-        <div class="space-y-2.5" id="participant-locations-list">
-          <div class="p-6 rounded-2xl bg-white/[0.02] border border-white/5 text-center space-y-2">
-            <i data-lucide="radar" class="w-6 h-6 text-slate-500 mx-auto"></i>
-            <p class="text-xs font-medium text-slate-300">Belum ada peserta terhubung</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- TAB 2: CHAT -->
-      <div id="tab-content-chat" class="hidden flex-1 flex flex-col overflow-hidden">
-        <div id="chat-messages" class="flex-1 p-4 overflow-y-auto space-y-3 text-sm">
-          <div class="text-center py-6">
-            <span class="px-3 py-1 rounded-full bg-white/5 border border-white/5 text-[11px] text-slate-400">
-              Pesan terenkripsi end-to-end dalam sesi WPCS
-            </span>
-          </div>
-        </div>
-
-        <form onsubmit="sendChatMessage(event)" class="p-3 border-t border-white/10 flex items-center gap-2">
-          <input id="chat-input" type="text" placeholder="Kirim pesan terenkripsi..." class="flex-1 bg-obsidian-950/80 border border-white/10 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-cyan-400" />
-          <button type="submit" class="p-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white transition">
-            <i data-lucide="send" class="w-4 h-4"></i>
-          </button>
-        </form>
+      <div class="flex-1 p-4 overflow-y-auto space-y-3" id="participant-locations-list">
+        <p class="text-xs text-slate-400 text-center py-4">Belum ada peserta terhubung.</p>
       </div>
     </aside>
   </main>
 
-  <!-- =========================================================
-       3. LAYAR RINGKASAN PASCA-PANGGILAN
-  ========================================================== -->
-  <section id="ended-screen" class="hidden relative z-20 h-full w-full flex items-center justify-center p-4">
-    <div class="glass-panel hud-corner max-w-md w-full rounded-3xl p-8 text-center space-y-5">
-      <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500/20 to-cyan-500/20 border border-cyan-400/30 flex items-center justify-center mx-auto text-cyan-300">
-        <i data-lucide="shield-check" class="w-8 h-8"></i>
-      </div>
-      <div>
-        <h2 class="text-2xl font-bold text-white">Sesi WPCS Berakhir</h2>
-        <p class="text-slate-400 text-sm mt-1">Log sesi dan telemetri lokasi telah ditutup dengan aman.</p>
-      </div>
-      <div class="bg-obsidian-950/70 border border-white/5 rounded-2xl p-4 flex justify-around text-xs">
-        <div>
-          <span class="text-slate-400 block">Durasi Panggilan</span>
-          <span id="final-duration" class="font-mono text-base font-semibold text-white mt-0.5 block">00:00</span>
-        </div>
-        <div class="w-[1px] bg-white/10"></div>
-        <div>
-          <span class="text-slate-400 block">Status Keamanan</span>
-          <span class="text-emerald-400 font-semibold text-base mt-0.5 block">Terenkripsi</span>
-        </div>
-      </div>
-      <button onclick="location.href = window.location.pathname" class="w-full py-3 rounded-xl bg-white/10 hover:bg-white/15 text-white font-medium text-sm transition">
-        Kembali ke Lobi Utama
-      </button>
-    </div>
-  </section>
-
-  <!-- =========================================================
-       JAVASCRIPT LOGIC
-  ========================================================== -->
   <script>
     lucide.createIcons();
 
     const state = {
       localStream: null,
-      screenStream: null,
       micOn: true,
       camOn: true,
-      isScreenSharing: false,
-      isRecording: false,
-      handRaised: false,
-      sidebarOpen: false,
-      activeTab: 'location',
-      swapped: false,
-      callSeconds: 0,
-      recSeconds: 0,
-      timerInterval: null,
-      recInterval: null,
-      hostLat: null,
-      hostLng: null,
-      userName: 'Anda (Host)',
+      userName: 'Host',
       isGuest: false,
-      hostNameParam: 'Host',
-      roomCode: '',
-      invitedParticipants: []
+      roomCode: ''
     };
 
     function generateRoomCode() {
@@ -542,11 +369,9 @@
       for (let i = 0; i < 4; i++) {
         result += chars.charAt(Math.floor(Math.random() * chars.length));
       }
-      result += '-' + Math.random().toString(36).substring(2, 5);
-      return result;
+      return result + '-' + Math.random().toString(36).substring(2, 5);
     }
 
-    // Routing otomatis berdasarkan URL Query Parameters
     window.addEventListener('DOMContentLoaded', () => {
       const urlParams = new URLSearchParams(window.location.search);
       const mode = urlParams.get('mode');
@@ -555,23 +380,21 @@
 
       if (mode === 'participant' || host || room) {
         state.isGuest = true;
-        state.hostNameParam = host ? decodeURIComponent(host) : 'Host';
         state.roomCode = room ? room : 'Sesi Tamu';
-        
         document.getElementById('display-room-code').textContent = state.roomCode;
         document.getElementById('lobby-screen').classList.add('hidden');
         document.getElementById('guest-lobby-screen').classList.remove('hidden');
       } else {
         state.roomCode = generateRoomCode();
-        initMedia();
+        initMediaHost();
       }
-      detectLocation();
     });
 
-    async function initMedia() {
+    async function initMediaHost() {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
         state.localStream = stream;
+        state.camOn = true;
         const lobbyVideo = document.getElementById('lobby-video');
         if (lobbyVideo) {
           lobbyVideo.srcObject = stream;
@@ -580,37 +403,11 @@
         const fallback = document.getElementById('lobby-fallback');
         if (fallback) fallback.classList.add('hidden');
       } catch (err) {
-        state.camOn = false;
+        console.warn('Gagal akses kamera host:', err);
         const statusEl = document.getElementById('lobby-cam-status');
-        if (statusEl) statusEl.textContent = 'Kamera tidak terdeteksi atau izin ditolak';
-        const btn = document.getElementById('lobby-cam-btn');
-        if (btn) {
-          btn.classList.add('bg-rose-600');
-          btn.innerHTML = `<i data-lucide="video-off" class="w-5 h-5"></i>`;
+        if (statusEl) {
+          statusEl.innerHTML = `Izin kamera diblokir/tidak didukung.<br><span class="text-[10px] text-amber-400">Pastikan menggunakan HTTPS atau localhost.</span>`;
         }
-        lucide.createIcons();
-      }
-    }
-
-    function detectLocation() {
-      if ('geolocation' in navigator) {
-        navigator.geolocation.getCurrentPosition(
-          (pos) => {
-            state.hostLat = pos.coords.latitude;
-            state.hostLng = pos.coords.longitude;
-            const statusEl = document.getElementById('host-gps-status');
-            const coordsEl = document.getElementById('host-coords-text');
-            if (statusEl) statusEl.textContent = 'GPS: Terkunci';
-            if (coordsEl) coordsEl.textContent = `Koordinat Anda: ${state.hostLat.toFixed(4)}, ${state.hostLng.toFixed(4)}`;
-          },
-          () => {
-            const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-            const statusEl = document.getElementById('host-gps-status');
-            const coordsEl = document.getElementById('host-coords-text');
-            if (statusEl) statusEl.textContent = 'Zona Waktu';
-            if (coordsEl) coordsEl.textContent = `Zona Waktu: ${tz}`;
-          }
-        );
       }
     }
 
@@ -619,7 +416,7 @@
       if (nameInput) state.userName = nameInput;
 
       document.getElementById('local-name-badge').textContent = state.userName;
-      document.getElementById('local-initials').textContent = getInitials(state.userName);
+      document.getElementById('local-initials').textContent = state.userName.slice(0, 2).toUpperCase();
       document.getElementById('role-badge').textContent = 'HOST';
       document.getElementById('stage-room-code').textContent = state.roomCode;
 
@@ -630,12 +427,9 @@
         document.getElementById('local-video-off').classList.remove('hidden');
       }
 
-      updateControlButtons();
       document.getElementById('lobby-screen').classList.add('hidden');
       document.getElementById('call-screen').classList.remove('hidden');
-
       startCallTimer();
-      initDraggablePiP();
     }
 
     async function joinAsGuest() {
@@ -648,20 +442,19 @@
       }
       state.userName = guestName;
       document.getElementById('local-name-badge').textContent = state.userName;
-      document.getElementById('local-initials').textContent = getInitials(state.userName);
+      document.getElementById('local-initials').textContent = state.userName.slice(0, 2).toUpperCase();
       document.getElementById('role-badge').textContent = 'PESERTA';
       
       const copyBtn = document.getElementById('copy-link-btn');
       if (copyBtn) copyBtn.style.display = 'none';
 
-      // Meminta izin kamera dan mikrofon secara eksplisit saat tamu mengklik tombol gabung
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
         state.localStream = stream;
         state.camOn = true;
       } catch (err) {
         state.camOn = false;
-        console.warn('Izin kamera ditolak atau tidak tersedia:', err);
+        alert('Izin kamera/mikrofon diperlukan untuk bergabung. Pastikan Anda memberikan izin akses pada peramban.');
       }
 
       const localVideo = document.getElementById('local-video');
@@ -673,16 +466,9 @@
         document.getElementById('local-video-off').classList.remove('hidden');
       }
 
-      updateControlButtons();
       document.getElementById('guest-lobby-screen').classList.add('hidden');
       document.getElementById('call-screen').classList.remove('hidden');
-
       startCallTimer();
-      initDraggablePiP();
-    }
-
-    function getInitials(name) {
-      return name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase() || 'US';
     }
 
     function copyInviteLink() {
@@ -691,299 +477,49 @@
       
       if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(link).then(() => {
-          showCopySuccess();
-        }).catch(() => {
-          fallbackCopyText(link);
+          alert('Tautan undangan unik berhasil disalin!');
         });
-      } else {
-        fallbackCopyText(link);
       }
-    }
-
-    function showCopySuccess() {
-      const topLabel = document.getElementById('copy-link-label');
-      const stageLabel = document.getElementById('stage-copy-label');
-      if (topLabel) topLabel.textContent = 'Tautan Unik Tersalin!';
-      if (stageLabel) stageLabel.textContent = 'Tautan Unik Tersalin!';
-      setTimeout(() => {
-        if (topLabel) topLabel.textContent = 'Salin Link Undangan';
-        if (stageLabel) stageLabel.textContent = 'Salin Tautan Undangan Unik';
-      }, 2200);
-    }
-
-    function fallbackCopyText(text) {
-      const textArea = document.createElement('textarea');
-      textArea.value = text;
-      textArea.style.position = 'fixed';
-      document.body.appendChild(textArea);
-      textArea.focus();
-      textArea.select();
-      try {
-        document.execCommand('copy');
-        showCopySuccess();
-      } catch (err) {
-        console.error('Gagal menyalin tautan', err);
-      }
-      document.body.removeChild(textArea);
-    }
-
-    function initDraggablePiP() {
-      const pip = document.getElementById('pip-window');
-      const stage = document.getElementById('video-stage');
-      let isDragging = false;
-      let startX, startY, initialLeft, initialTop;
-
-      const onDown = (e) => {
-        isDragging = true;
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-        const rect = pip.getBoundingClientRect();
-        const stageRect = stage.getBoundingClientRect();
-
-        startX = clientX;
-        startY = clientY;
-        initialLeft = rect.left - stageRect.left;
-        initialTop = rect.top - stageRect.top;
-
-        pip.style.bottom = 'auto';
-        pip.style.right = 'auto';
-        pip.style.left = `${initialLeft}px`;
-        pip.style.top = `${initialTop}px`;
-      };
-
-      const onMove = (e) => {
-        if (!isDragging) return;
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-        const dx = clientX - startX;
-        const dy = clientY - startY;
-
-        const maxLeft = stage.clientWidth - pip.offsetWidth - 12;
-        const maxTop = stage.clientHeight - pip.offsetHeight - 12;
-
-        pip.style.left = `${Math.max(12, Math.min(maxLeft, initialLeft + dx))}px`;
-        pip.style.top = `${Math.max(12, Math.min(maxTop, initialTop + dy))}px`;
-      };
-
-      const onUp = () => { isDragging = false; };
-
-      pip.addEventListener('mousedown', onDown);
-      window.addEventListener('mousemove', onMove);
-      window.addEventListener('mouseup', onUp);
-
-      pip.addEventListener('touchstart', onDown, { passive: true });
-      window.addEventListener('touchmove', onMove, { passive: true });
-      window.addEventListener('touchend', onUp);
     }
 
     function toggleMic() {
       state.micOn = !state.micOn;
       if (state.localStream) state.localStream.getAudioTracks().forEach(t => t.enabled = state.micOn);
-      updateControlButtons();
+      const btn = document.getElementById('btn-mic');
+      btn.classList.toggle('bg-rose-600', !state.micOn);
     }
 
     function toggleCam() {
       state.camOn = !state.camOn;
       if (state.localStream) state.localStream.getVideoTracks().forEach(t => t.enabled = state.camOn);
       const offOverlay = document.getElementById('local-video-off');
-      if (state.camOn && state.localStream) offOverlay.classList.add('hidden');
-      else offOverlay.classList.remove('hidden');
-      updateControlButtons();
+      offOverlay.classList.toggle('hidden', state.camOn);
+      const btn = document.getElementById('btn-cam');
+      btn.classList.toggle('bg-rose-600', !state.camOn);
     }
 
-    function updateControlButtons() {
-      const btnMic = document.getElementById('btn-mic');
-      btnMic.classList.toggle('bg-rose-600', !state.micOn);
-      btnMic.classList.toggle('bg-white/10', state.micOn);
-      btnMic.innerHTML = `<i data-lucide="${state.micOn ? 'mic' : 'mic-off'}" class="w-5 h-5"></i>`;
-      document.getElementById('local-mute-badge').classList.toggle('hidden', state.micOn);
-
-      const btnCam = document.getElementById('btn-cam');
-      btnCam.classList.toggle('bg-rose-600', !state.camOn);
-      btnCam.classList.toggle('bg-white/10', state.camOn);
-      btnCam.innerHTML = `<i data-lucide="${state.camOn ? 'video' : 'video-off'}" class="w-5 h-5"></i>`;
-
-      lucide.createIcons();
-    }
-
-    async function toggleScreenShare() {
-      const btn = document.getElementById('btn-screen');
-      const localVideo = document.getElementById('local-video');
-
-      if (!state.isScreenSharing) {
-        try {
-          const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
-          state.screenStream = screenStream;
-          state.isScreenSharing = true;
-          localVideo.srcObject = screenStream;
-          localVideo.classList.remove('mirror-video');
-          document.getElementById('local-video-off').classList.add('hidden');
-          btn.classList.add('bg-cyan-500', 'text-obsidian-950');
-          screenStream.getVideoTracks()[0].onended = () => stopScreenShare();
-        } catch (err) {
-          console.log('Berbagi layar dibatalkan');
-        }
-      } else {
-        stopScreenShare();
-      }
-    }
-
-    function stopScreenShare() {
-      if (state.screenStream) state.screenStream.getTracks().forEach(t => t.stop());
-      state.isScreenSharing = false;
-      const localVideo = document.getElementById('local-video');
-      localVideo.classList.add('mirror-video');
-      if (state.localStream && state.camOn) localVideo.srcObject = state.localStream;
-      else document.getElementById('local-video-off').classList.remove('hidden');
-      document.getElementById('btn-screen').classList.remove('bg-cyan-500', 'text-obsidian-950');
-    }
-
-    function toggleRecording() {
-      state.isRecording = !state.isRecording;
-      const badge = document.getElementById('recording-badge');
-      const btn = document.getElementById('btn-record');
-
-      if (state.isRecording) {
-        badge.classList.remove('hidden');
-        btn.classList.add('bg-rose-600');
-        state.recSeconds = 0;
-        state.recInterval = setInterval(() => {
-          state.recSeconds++;
-          document.getElementById('rec-timer').textContent = formatTime(state.recSeconds);
-        }, 1000);
-      } else {
-        badge.classList.add('hidden');
-        btn.classList.remove('bg-rose-600');
-        clearInterval(state.recInterval);
-      }
-    }
-
-    function swapVideos() {
-      state.swapped = !state.swapped;
-      const pip = document.getElementById('pip-window');
-      if (state.swapped) {
-        pip.classList.remove('w-36', 'sm:w-48', 'md:w-56');
-        pip.classList.add('w-72', 'sm:w-96', 'md:w-[460px]');
-      } else {
-        pip.classList.add('w-36', 'sm:w-48', 'md:w-56');
-        pip.classList.remove('w-72', 'sm:w-96', 'md:w-[460px]');
-      }
-    }
-
-    function toggleReactionPicker() {
-      document.getElementById('reaction-picker').classList.toggle('hidden');
-    }
-
-    function sendReaction(emoji) {
-      document.getElementById('reaction-picker').classList.add('hidden');
-      const layer = document.getElementById('reactions-layer');
-      const el = document.createElement('div');
-      el.textContent = emoji;
-      el.className = 'absolute bottom-16 text-3xl animate-float-up';
-      el.style.left = `${20 + Math.random() * 60}%`;
-      layer.appendChild(el);
-      setTimeout(() => el.remove(), 2600);
-    }
-
-    function toggleHand() {
-      state.handRaised = !state.handRaised;
-      document.getElementById('hand-raised-banner').classList.toggle('hidden', !state.handRaised);
-      document.getElementById('btn-hand').classList.toggle('bg-amber-500', state.handRaised);
-      document.getElementById('btn-hand').classList.toggle('text-obsidian-950', state.handRaised);
-    }
-
-    function toggleSidebar(targetTab) {
+    function toggleSidebar() {
       const panel = document.getElementById('side-panel');
-      if (state.sidebarOpen && state.activeTab === targetTab) {
-        closeSidebar();
-        return;
-      }
-      state.sidebarOpen = true;
-      panel.classList.remove('translate-x-[120%]');
-      switchSidebarTab(targetTab);
+      panel.classList.toggle('translate-x-[120%]');
     }
 
     function closeSidebar() {
-      state.sidebarOpen = false;
       document.getElementById('side-panel').classList.add('translate-x-[120%]');
     }
 
-    function switchSidebarTab(tab) {
-      state.activeTab = tab;
-      const isLoc = tab === 'location';
-
-      document.getElementById('tab-content-location').classList.toggle('hidden', !isLoc);
-      document.getElementById('tab-content-chat').classList.toggle('hidden', isLoc);
-
-      const btnLoc = document.getElementById('tab-btn-location');
-      const btnChat = document.getElementById('tab-btn-chat');
-
-      if (isLoc) {
-        btnLoc.className = 'flex-1 py-1.5 px-2.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 bg-cyan-500/20 text-cyan-300 border border-cyan-400/30 transition';
-        btnChat.className = 'flex-1 py-1.5 px-2.5 rounded-lg text-xs font-medium flex items-center justify-center gap-1.5 text-slate-400 hover:text-white transition';
-      } else {
-        btnChat.className = 'flex-1 py-1.5 px-2.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 bg-indigo-500/25 text-indigo-300 border border-indigo-400/30 transition';
-        btnLoc.className = 'flex-1 py-1.5 px-2.5 rounded-lg text-xs font-medium flex items-center justify-center gap-1.5 text-slate-400 hover:text-white transition';
-      }
-    }
-
-    function sendChatMessage(e) {
-      e.preventDefault();
-      const input = document.getElementById('chat-input');
-      const text = input.value.trim();
-      if (!text) return;
-
-      const container = document.getElementById('chat-messages');
-      const msgDiv = document.createElement('div');
-      msgDiv.className = 'bg-indigo-600/25 border border-indigo-400/30 rounded-2xl p-3 ml-6';
-      msgDiv.innerHTML = `
-        <div class="flex items-center justify-between text-[11px] text-indigo-300 font-medium mb-1">
-          <span>${escapeHtml(state.userName)}</span>
-          <span class="text-slate-400">${formatTime(state.callSeconds)}</span>
-        </div>
-        <p class="text-white text-xs leading-relaxed">${escapeHtml(text)}</p>
-      `;
-      container.appendChild(msgDiv);
-      container.scrollTop = container.scrollHeight;
-      input.value = '';
-    }
-
-    function escapeHtml(str) {
-      const div = document.createElement('div');
-      div.textContent = str;
-      return div.innerHTML;
-    }
-
     function startCallTimer() {
-      state.timerInterval = setInterval(() => {
-        state.callSeconds++;
-        document.getElementById('call-timer').textContent = formatTime(state.callSeconds);
+      let sec = 0;
+      setInterval(() => {
+        sec++;
+        const m = String(Math.floor(sec / 60)).padStart(2, '0');
+        const s = String(sec % 60).padStart(2, '0');
+        document.getElementById('call-timer').textContent = `${m}:${s}`;
       }, 1000);
     }
 
-    function formatTime(sec) {
-      const m = String(Math.floor(sec / 60)).padStart(2, '0');
-      const s = String(sec % 60).padStart(2, '0');
-      return `${m}:${s}`;
-    }
-
-    function toggleFullScreen() {
-      if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen().catch(() => {});
-      } else {
-        document.exitFullscreen();
-      }
-    }
-
     function endCall() {
-      clearInterval(state.timerInterval);
-      clearInterval(state.recInterval);
-      if (state.`localStream`) state.localStream.getTracks().forEach(t => t.stop());
-      if (state.screenStream) state.screenStream.getTracks().forEach(t => t.stop());
-
-      document.getElementById('final-duration').textContent = formatTime(state.callSeconds);
-      document.getElementById('call-screen').classList.add('hidden');
-      document.getElementById('ended-screen').classList.remove('hidden');
+      if (state.localStream) state.localStream.getTracks().forEach(t => t.stop());
+      location.href = window.location.pathname;
     }
   </script>
 </body>
