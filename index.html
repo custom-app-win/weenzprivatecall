@@ -187,7 +187,7 @@
           </div>
           <h1 class="text-2xl md:text-3xl font-bold tracking-tight text-white">Weenz Private Call System</h1>
           <p class="text-slate-400 text-xs mt-1.5 leading-relaxed">
-            Buat ruang privat dan bagikan tautan undangan kepada peserta untuk memverifikasi lokasi serta memulai panggilan.
+            Buat ruang privat dengan kode sesi unik dan bagikan tautan undangan kepada peserta.
           </p>
         </div>
 
@@ -219,16 +219,16 @@
   </section>
 
   <!-- =========================================================
-       1.B. LAYAR LOBI PESERTA / GUEST JOIN (Jika diakses via link undangan)
+       1.B. LAYAR LOBI PESERTA / GUEST JOIN
   ========================================================== -->
   <section id="guest-lobby-screen" class="hidden relative z-20 h-full w-full flex items-center justify-center p-4 md:p-8 transition-all duration-500">
-    <div class="glass-panel hud-corner w-full max-w-md rounded-3xl p-6 md:p-8 text-center space-y-5">
+    <div class="glass-panel hud-corner max-w-md w-full rounded-3xl p-6 md:p-8 text-center space-y-5">
       <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500/20 to-cyan-500/20 border border-cyan-400/30 flex items-center justify-center mx-auto text-cyan-300">
         <i data-lucide="compass" class="w-8 h-8"></i>
       </div>
       <div>
         <h2 class="text-xl font-bold text-white">Undangan Ruang WPCS</h2>
-        <p class="text-slate-400 text-xs mt-1">Anda diundang bergabung oleh <span id="guest-host-name" class="text-cyan-300 font-semibold">Host</span></p>
+        <p class="text-slate-400 text-xs mt-1">Sesi: <span id="display-room-code" class="font-mono text-cyan-300 font-semibold">---</span></p>
       </div>
 
       <div class="space-y-3 text-left">
@@ -238,7 +238,7 @@
         </div>
         <div class="p-3 rounded-xl bg-cyan-500/10 border border-cyan-400/20 text-[11px] text-cyan-200 flex items-start gap-2.5">
           <i data-lucide="shield-alert" class="w-4 h-4 shrink-0 text-cyan-400 mt-0.5"></i>
-          <span>Sesuai kebijakan keamanan Host, akses lokasi GPS Anda diperlukan untuk verifikasi wilayah panggilan privat.</span>
+          <span>Akses lokasi GPS Anda diperlukan untuk verifikasi wilayah panggilan privat sesi ini.</span>
         </div>
       </div>
 
@@ -294,7 +294,7 @@
     <!-- MAIN STAGE -->
     <div id="video-stage" class="relative flex-1 my-3 rounded-3xl overflow-hidden border border-white/10 bg-obsidian-900/90 shadow-2xl hud-corner">
       
-      <!-- 1. LAYAR UTAMA (WAITING ROOM / REMOTE STREAM) -->
+      <!-- 1. LAYAR UTAMA -->
       <div id="remote-container" class="absolute inset-0 w-full h-full flex flex-col items-center justify-center p-6 text-center overflow-hidden">
         <div id="waiting-room-state" class="max-w-md flex flex-col items-center space-y-4 z-10">
           <div class="relative flex items-center justify-center w-24 h-24">
@@ -308,20 +308,20 @@
           <div class="space-y-1.5">
             <h2 class="text-lg sm:text-xl font-bold text-white">Menunggu Peserta Bergabung...</h2>
             <p class="text-xs sm:text-sm text-slate-400 leading-relaxed">
-              Sesi WPCS aktif. Bagikan tautan undangan agar peserta dapat terhubung.
+              Kode Sesi Unik: <span id="stage-room-code" class="font-mono text-cyan-300 font-bold">---</span>
             </p>
           </div>
 
           <button onclick="copyInviteLink()" class="mt-2 px-5 py-2.5 rounded-xl bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-400/40 text-cyan-300 text-xs font-semibold flex items-center gap-2 transition">
             <i data-lucide="copy" class="w-4 h-4"></i>
-            <span id="stage-copy-label">Salin Tautan Undangan</span>
+            <span id="stage-copy-label">Salin Tautan Undangan Unik</span>
           </button>
         </div>
 
         <div class="absolute inset-0 pointer-events-none bg-gradient-to-t from-obsidian-950/80 via-transparent to-obsidian-950/30"></div>
       </div>
 
-      <!-- 2. VIDEO ANDA (KECIL / PICTURE-IN-PICTURE DRAGGABLE) -->
+      <!-- 2. VIDEO ANDA (PiP) -->
       <div id="pip-window" style="bottom: 20px; right: 20px;" class="absolute z-30 w-36 sm:w-48 md:w-56 aspect-video rounded-2xl overflow-hidden border-2 border-cyan-400/40 bg-obsidian-950 shadow-[0_15px_35px_rgba(0,0,0,0.75)] cursor-grab active:cursor-grabbing group transition-shadow hover:border-cyan-400/80">
         <video id="local-video" autoplay playsinline muted class="w-full h-full object-cover mirror-video"></video>
         
@@ -532,22 +532,38 @@
       userName: 'Anda (Host)',
       isGuest: false,
       hostNameParam: 'Host',
+      roomCode: '',
       invitedParticipants: []
     };
+
+    // Generate kode unik sesi ruangan (contoh: wpcs-8472-ab)
+    function generateRoomCode() {
+      const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+      let result = 'wpcs-';
+      for (let i = 0; i < 4; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      result += '-' + Math.random().toString(36.substring(2, 5));
+      return result;
+    }
 
     // Routing otomatis berdasarkan URL Query Parameters
     window.addEventListener('DOMContentLoaded', () => {
       const urlParams = new URLSearchParams(window.location.search);
       const mode = urlParams.get('mode');
       const host = urlParams.get('host');
+      const room = urlParams.get('room');
 
-      if (mode === 'participant' || host) {
+      if (mode === 'participant' || host || room) {
         state.isGuest = true;
         state.hostNameParam = host ? decodeURIComponent(host) : 'Host';
-        document.getElementById('guest-host-name').textContent = state.hostNameParam;
+        state.roomCode = room ? room : 'Sesi Tamu';
+        
+        document.getElementById('display-room-code').textContent = state.roomCode;
         document.getElementById('lobby-screen').classList.add('hidden');
         document.getElementById('guest-lobby-screen').classList.remove('hidden');
       } else {
+        state.roomCode = generateRoomCode();
         initMedia();
       }
       detectLocation();
@@ -602,6 +618,7 @@
       document.getElementById('local-name-badge').textContent = state.userName;
       document.getElementById('local-initials').textContent = getInitials(state.userName);
       document.getElementById('role-badge').textContent = 'HOST';
+      document.getElementById('stage-room-code').textContent = state.roomCode;
 
       const localVideo = document.getElementById('local-video');
       if (state.localStream && state.camOn) {
@@ -629,7 +646,6 @@
       document.getElementById('local-initials').textContent = getInitials(state.userName);
       document.getElementById('role-badge').textContent = 'PESERTA';
       
-      // Sembunyikan tombol salin link untuk peserta biasa
       const copyBtn = document.getElementById('copy-link-btn');
       if (copyBtn) copyBtn.style.display = 'none';
 
@@ -656,7 +672,7 @@
 
     function copyInviteLink() {
       const cleanOrigin = window.location.origin + window.location.pathname;
-      const link = `${cleanOrigin}?host=${encodeURIComponent(state.userName)}&mode=participant`;
+      const link = `${cleanOrigin}?host=${encodeURIComponent(state.userName)}&room=${state.roomCode}&mode=participant`;
       
       if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(link).then(() => {
@@ -672,11 +688,11 @@
     function showCopySuccess() {
       const topLabel = document.getElementById('copy-link-label');
       const stageLabel = document.getElementById('stage-copy-label');
-      if (topLabel) topLabel.textContent = 'Tautan WPCS Tersalin!';
-      if (stageLabel) stageLabel.textContent = 'Tautan WPCS Tersalin!';
+      if (topLabel) topLabel.textContent = 'Tautan Unik Tersalin!';
+      if (stageLabel) stageLabel.textContent = 'Tautan Unik Tersalin!';
       setTimeout(() => {
         if (topLabel) topLabel.textContent = 'Salin Link Undangan';
-        if (stageLabel) stageLabel.textContent = 'Salin Tautan Undangan';
+        if (stageLabel) stageLabel.textContent = 'Salin Tautan Undangan Unik';
       }, 2200);
     }
 
