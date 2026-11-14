@@ -238,12 +238,12 @@
         </div>
         <div class="p-3 rounded-xl bg-cyan-500/10 border border-cyan-400/20 text-[11px] text-cyan-200 flex items-start gap-2.5">
           <i data-lucide="shield-alert" class="w-4 h-4 shrink-0 text-cyan-400 mt-0.5"></i>
-          <span>Akses lokasi GPS Anda diperlukan untuk verifikasi wilayah panggilan privat sesi ini.</span>
+          <span>Akses kamera & lokasi GPS Anda diperlukan untuk verifikasi wilayah panggilan privat sesi ini.</span>
         </div>
       </div>
 
       <button onclick="joinAsGuest()" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-indigo-600 to-cyan-500 hover:from-indigo-500 hover:to-cyan-400 text-white font-semibold text-sm shadow-lg transition">
-        Setujui Lokasi & Gabung Panggilan
+        Izinkan Kamera & Gabung Panggilan
       </button>
     </div>
   </section>
@@ -536,14 +536,13 @@
       invitedParticipants: []
     };
 
-    // Generate kode unik sesi ruangan (contoh: wpcs-8472-ab)
     function generateRoomCode() {
       const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
       let result = 'wpcs-';
       for (let i = 0; i < 4; i++) {
         result += chars.charAt(Math.floor(Math.random() * chars.length));
       }
-      result += '-' + Math.random().toString(36.substring(2, 5));
+      result += '-' + Math.random().toString(36).substring(2, 5);
       return result;
     }
 
@@ -574,12 +573,16 @@
         const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
         state.localStream = stream;
         const lobbyVideo = document.getElementById('lobby-video');
-        lobbyVideo.srcObject = stream;
-        lobbyVideo.classList.remove('hidden');
-        document.getElementById('lobby-fallback').classList.add('hidden');
+        if (lobbyVideo) {
+          lobbyVideo.srcObject = stream;
+          lobbyVideo.classList.remove('hidden');
+        }
+        const fallback = document.getElementById('lobby-fallback');
+        if (fallback) fallback.classList.add('hidden');
       } catch (err) {
         state.camOn = false;
-        document.getElementById('lobby-cam-status').textContent = 'Kamera tidak terdeteksi atau izin ditolak';
+        const statusEl = document.getElementById('lobby-cam-status');
+        if (statusEl) statusEl.textContent = 'Kamera tidak terdeteksi atau izin ditolak';
         const btn = document.getElementById('lobby-cam-btn');
         if (btn) {
           btn.classList.add('bg-rose-600');
@@ -635,8 +638,10 @@
       initDraggablePiP();
     }
 
-    function joinAsGuest() {
-      const guestName = document.getElementById('guest-name-input').value.trim();
+    async function joinAsGuest() {
+      const nameInputEl = document.getElementById('guest-name-input');
+      const guestName = nameInputEl ? nameInputEl.value.trim() : '';
+      
       if (!guestName) {
         alert('Mohon masukkan nama Anda terlebih dahulu.');
         return;
@@ -649,21 +654,31 @@
       const copyBtn = document.getElementById('copy-link-btn');
       if (copyBtn) copyBtn.style.display = 'none';
 
-      initMedia().then(() => {
-        const localVideo = document.getElementById('local-video');
-        if (state.localStream && state.camOn) {
-          localVideo.srcObject = state.localStream;
-        } else {
-          document.getElementById('local-video-off').classList.remove('hidden');
-        }
+      // Meminta izin kamera dan mikrofon secara eksplisit saat tamu mengklik tombol gabung
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        state.localStream = stream;
+        state.camOn = true;
+      } catch (err) {
+        state.camOn = false;
+        console.warn('Izin kamera ditolak atau tidak tersedia:', err);
+      }
 
-        updateControlButtons();
-        document.getElementById('guest-lobby-screen').classList.add('hidden');
-        document.getElementById('call-screen').classList.remove('hidden');
+      const localVideo = document.getElementById('local-video');
+      if (state.localStream && state.camOn) {
+        localVideo.srcObject = state.localStream;
+        localVideo.classList.remove('hidden');
+        document.getElementById('local-video-off').classList.add('hidden');
+      } else {
+        document.getElementById('local-video-off').classList.remove('hidden');
+      }
 
-        startCallTimer();
-        initDraggablePiP();
-      });
+      updateControlButtons();
+      document.getElementById('guest-lobby-screen').classList.add('hidden');
+      document.getElementById('call-screen').classList.remove('hidden');
+
+      startCallTimer();
+      initDraggablePiP();
     }
 
     function getInitials(name) {
@@ -963,7 +978,7 @@
     function endCall() {
       clearInterval(state.timerInterval);
       clearInterval(state.recInterval);
-      if (state.localStream) state.localStream.getTracks().forEach(t => t.stop());
+      if (state.`localStream`) state.localStream.getTracks().forEach(t => t.stop());
       if (state.screenStream) state.screenStream.getTracks().forEach(t => t.stop());
 
       document.getElementById('final-duration').textContent = formatTime(state.callSeconds);
