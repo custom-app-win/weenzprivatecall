@@ -142,7 +142,7 @@
   </div>
 
   <!-- =========================================================
-       1. LAYAR LOBI / PRE-JOIN
+       1. LAYAR LOBI HOST / PRE-JOIN
   ========================================================== -->
   <section id="lobby-screen" class="relative z-20 h-full w-full flex items-center justify-center p-4 md:p-8 transition-all duration-500">
     <div class="glass-panel hud-corner w-full max-w-4xl rounded-3xl p-6 md:p-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
@@ -178,7 +178,7 @@
         </div>
       </div>
 
-      <!-- Form Masuk Panggilan -->
+      <!-- Form Masuk Panggilan Host -->
       <div class="lg:col-span-5 flex flex-col justify-between space-y-5">
         <div>
           <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/15 border border-indigo-400/30 text-indigo-300 text-xs font-medium mb-2.5">
@@ -219,6 +219,36 @@
   </section>
 
   <!-- =========================================================
+       1.B. LAYAR LOBI PESERTA / GUEST JOIN (Jika diakses via link undangan)
+  ========================================================== -->
+  <section id="guest-lobby-screen" class="hidden relative z-20 h-full w-full flex items-center justify-center p-4 md:p-8 transition-all duration-500">
+    <div class="glass-panel hud-corner w-full max-w-md rounded-3xl p-6 md:p-8 text-center space-y-5">
+      <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500/20 to-cyan-500/20 border border-cyan-400/30 flex items-center justify-center mx-auto text-cyan-300">
+        <i data-lucide="compass" class="w-8 h-8"></i>
+      </div>
+      <div>
+        <h2 class="text-xl font-bold text-white">Undangan Ruang WPCS</h2>
+        <p class="text-slate-400 text-xs mt-1">Anda diundang bergabung oleh <span id="guest-host-name" class="text-cyan-300 font-semibold">Host</span></p>
+      </div>
+
+      <div class="space-y-3 text-left">
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Nama Lengkap Anda</label>
+          <input id="guest-name-input" type="text" placeholder="Masukkan nama Anda..." class="w-full px-4 py-2.5 rounded-xl bg-obsidian-950/80 border border-white/10 text-sm text-white focus:outline-none focus:border-cyan-400 transition" />
+        </div>
+        <div class="p-3 rounded-xl bg-cyan-500/10 border border-cyan-400/20 text-[11px] text-cyan-200 flex items-start gap-2.5">
+          <i data-lucide="shield-alert" class="w-4 h-4 shrink-0 text-cyan-400 mt-0.5"></i>
+          <span>Sesuai kebijakan keamanan Host, akses lokasi GPS Anda diperlukan untuk verifikasi wilayah panggilan privat.</span>
+        </div>
+      </div>
+
+      <button onclick="joinAsGuest()" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-indigo-600 to-cyan-500 hover:from-indigo-500 hover:to-cyan-400 text-white font-semibold text-sm shadow-lg transition">
+        Setujui Lokasi & Gabung Panggilan
+      </button>
+    </div>
+  </section>
+
+  <!-- =========================================================
        2. RUANG PANGGILAN UTAMA (ACTIVE CALL)
   ========================================================== -->
   <main id="call-screen" class="hidden relative z-10 h-full w-full flex flex-col justify-between p-3 md:p-5">
@@ -229,14 +259,14 @@
         <div class="flex items-center gap-2">
           <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_10px_#34d399]"></span>
           <span class="font-bold text-sm tracking-wider text-white">WPCS</span>
-          <span class="text-[11px] px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-400/30 font-medium">HOST</span>
+          <span id="role-badge" class="text-[11px] px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-400/30 font-medium">HOST</span>
         </div>
         <div class="h-4 w-[1px] bg-white/10"></div>
         <div class="flex items-center gap-1.5 font-mono text-xs text-cyan-300">
           <i data-lucide="clock" class="w-3.5 h-3.5"></i>
           <span id="call-timer">00:00</span>
         </div>
-        <button onclick="copyInviteLink()" class="flex items-center gap-1.5 text-xs text-cyan-300 hover:text-white bg-cyan-500/10 hover:bg-cyan-500/20 px-2.5 py-1 rounded-lg border border-cyan-500/25 transition">
+        <button id="copy-link-btn" onclick="copyInviteLink()" class="flex items-center gap-1.5 text-xs text-cyan-300 hover:text-white bg-cyan-500/10 hover:bg-cyan-500/20 px-2.5 py-1 rounded-lg border border-cyan-500/25 transition">
           <i data-lucide="link" class="w-3 h-3"></i>
           <span id="copy-link-label">Salin Link Undangan</span>
         </button>
@@ -250,7 +280,7 @@
       <div class="flex items-center gap-2">
         <button onclick="toggleSidebar('location')" class="glass-pill hover:bg-white/10 text-cyan-300 px-3 py-2 rounded-xl text-xs font-medium flex items-center gap-1.5 border-cyan-400/30 transition">
           <i data-lucide="radar" class="w-4 h-4"></i>
-          <span class="hidden sm:inline">Lokasi Peserta (0)</span>
+          <span class="hidden sm:inline">Lokasi Peserta (<span id="participant-count">0</span>)</span>
         </button>
         <button onclick="swapVideos()" title="Ubah Ukuran PiP" class="glass-pill hover:bg-white/10 text-slate-200 p-2 rounded-xl transition">
           <i data-lucide="arrow-left-right" class="w-4 h-4"></i>
@@ -261,15 +291,11 @@
       </div>
     </header>
 
-    <!-- MAIN STAGE: MENUNGGU PESERTA BERGABUNG + PIP VIDEO HOST -->
+    <!-- MAIN STAGE -->
     <div id="video-stage" class="relative flex-1 my-3 rounded-3xl overflow-hidden border border-white/10 bg-obsidian-900/90 shadow-2xl hud-corner">
       
       <!-- 1. LAYAR UTAMA (WAITING ROOM / REMOTE STREAM) -->
       <div id="remote-container" class="absolute inset-0 w-full h-full flex flex-col items-center justify-center p-6 text-center overflow-hidden">
-        <!-- Elemen Video Asli untuk WebRTC di masa mendatang -->
-        <video id="remote-video" autoplay playsinline class="hidden w-full h-full object-cover"></video>
-
-        <!-- Tampilan Kosong Saat Menunggu Peserta -->
         <div id="waiting-room-state" class="max-w-md flex flex-col items-center space-y-4 z-10">
           <div class="relative flex items-center justify-center w-24 h-24">
             <span class="absolute inset-0 rounded-full border border-cyan-400/30 animate-ping" style="animation-duration: 3s;"></span>
@@ -282,7 +308,7 @@
           <div class="space-y-1.5">
             <h2 class="text-lg sm:text-xl font-bold text-white">Menunggu Peserta Bergabung...</h2>
             <p class="text-xs sm:text-sm text-slate-400 leading-relaxed">
-              Ruang WPCS telah aktif. Bagikan tautan undangan agar peserta dapat masuk dan memverifikasi lokasi mereka.
+              Sesi WPCS aktif. Bagikan tautan undangan agar peserta dapat terhubung.
             </p>
           </div>
 
@@ -317,10 +343,7 @@
         </div>
       </div>
 
-      <!-- Container Reaksi Emoji Melayang -->
       <div id="reactions-layer" class="absolute inset-0 pointer-events-none z-40 overflow-hidden"></div>
-
-      <!-- Badge Angkat Tangan -->
       <div id="hand-raised-banner" class="hidden absolute top-4 left-1/2 -translate-x-1/2 z-30 glass-pill px-4 py-1.5 rounded-full border-amber-400/50 flex items-center gap-2 text-xs text-amber-300 shadow-lg">
         <span>✋</span>
         <span>Anda mengangkat tangan</span>
@@ -349,12 +372,10 @@
 
         <div class="h-6 w-[1px] bg-white/10 mx-1 hidden sm:block"></div>
 
-        <!-- Tombol Radar Lokasi Peserta (Khusus Host) -->
         <button id="btn-radar" onclick="toggleSidebar('location')" class="w-11 h-11 rounded-full bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/40 text-cyan-300 flex items-center justify-center transition" title="Radar Lokasi Peserta">
           <i data-lucide="map-pin" class="w-5 h-5"></i>
         </button>
 
-        <!-- Reaksi Emoji -->
         <div class="relative">
           <button onclick="toggleReactionPicker()" class="w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition" title="Kirim Reaksi">
             <i data-lucide="smile" class="w-5 h-5"></i>
@@ -368,19 +389,16 @@
           </div>
         </div>
 
-        <!-- Angkat Tangan -->
         <button id="btn-hand" onclick="toggleHand()" class="w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition" title="Angkat Tangan">
           <i data-lucide="hand" class="w-5 h-5"></i>
         </button>
 
-        <!-- Panel Chat -->
         <button id="btn-sidebar" onclick="toggleSidebar('chat')" class="relative w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition" title="Obrolan Privat">
           <i data-lucide="message-square" class="w-5 h-5"></i>
         </button>
 
         <div class="h-6 w-[1px] bg-white/10 mx-1"></div>
 
-        <!-- Akhiri Panggilan -->
         <button onclick="endCall()" class="h-11 px-5 rounded-full bg-rose-600 hover:bg-rose-500 text-white font-semibold text-sm flex items-center gap-2 shadow-lg shadow-rose-600/30 transition transform active:scale-95">
           <i data-lucide="phone-off" class="w-4 h-4"></i>
           <span class="hidden md:inline">Akhiri</span>
@@ -388,11 +406,8 @@
       </div>
     </footer>
 
-    <!-- =========================================================
-         SIDEBAR SLIDE-OVER (TAB RADAR LOKASI HOST & PRIVATE CHAT)
-    ========================================================== -->
+    <!-- SIDEBAR SLIDE-OVER -->
     <aside id="side-panel" class="fixed top-4 right-4 bottom-24 w-[calc(100%-2rem)] sm:w-96 glass-panel rounded-3xl z-40 flex flex-col overflow-hidden translate-x-[120%] transition-transform duration-300">
-      <!-- Tab Switcher Header -->
       <div class="p-3 border-b border-white/10 flex items-center justify-between gap-2">
         <div class="flex bg-obsidian-950/80 p-1 rounded-xl border border-white/5 flex-1">
           <button id="tab-btn-location" onclick="switchSidebarTab('location')" class="flex-1 py-1.5 px-2.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 bg-cyan-500/20 text-cyan-300 border border-cyan-400/30 transition">
@@ -409,52 +424,40 @@
         </button>
       </div>
 
-      <!-- KONTEN TAB 1: RADAR LOKASI PESERTA (HOST VIEW) -->
+      <!-- TAB 1: RADAR LOKASI -->
       <div id="tab-content-location" class="flex-1 overflow-y-auto p-4 space-y-4">
-        <!-- Visual Radar Map SVG -->
         <div class="relative rounded-2xl bg-obsidian-950 border border-cyan-500/25 p-4 overflow-hidden">
           <div class="flex items-center justify-between text-[11px] text-slate-400 mb-2">
             <span class="flex items-center gap-1.5 text-cyan-300 font-medium">
               <span class="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
               WPCS Geo-Radar Aktif
             </span>
-            <span id="host-gps-status" class="font-mono text-[10px] text-emerald-400">Host GPS: Aktif</span>
+            <span id="host-gps-status" class="font-mono text-[10px] text-emerald-400">GPS: Aktif</span>
           </div>
 
-          <!-- Radar Grid Visual (Hanya Titik Host) -->
           <div class="relative h-40 w-full flex items-center justify-center my-1">
             <svg viewBox="0 0 260 150" class="w-full h-full">
-              <!-- Lingkaran Radar -->
               <circle cx="130" cy="75" r="65" fill="none" stroke="rgba(34,211,238,0.18)" stroke-width="1" />
               <circle cx="130" cy="75" r="42" fill="none" stroke="rgba(34,211,238,0.18)" stroke-width="1" stroke-dasharray="3 3" />
               <circle cx="130" cy="75" r="20" fill="none" stroke="rgba(34,211,238,0.22)" stroke-width="1" />
               <line x1="60" y1="75" x2="200" y2="75" stroke="rgba(255,255,255,0.08)" stroke-width="1" />
               <line x1="130" y1="5" x2="130" y2="145" stroke="rgba(255,255,255,0.08)" stroke-width="1" />
-
-              <!-- Titik Host di Pusat -->
-              <circle cx="130" cy="75" r="9" fill="rgba(56,189,248,0.2)" />
               <circle cx="130" cy="75" r="4.5" fill="#38BDF8" />
-              <text x="130" y="92" text-anchor="middle" fill="#94A3B8" font-size="8" font-family="monospace">HOST</text>
+              <text x="130" y="92" text-anchor="middle" fill="#94A3B8" font-size="8" font-family="monospace">PUSAT</text>
             </svg>
           </div>
-          <p id="host-coords-text" class="text-[10px] font-mono text-center text-slate-400">
-            Koordinat Host: Mendeteksi lokasi perangkat Anda...
-          </p>
+          <p id="host-coords-text" class="text-[10px] font-mono text-center text-slate-400">Mendeteksi koordinat...</p>
         </div>
 
-        <!-- Daftar Kartu Detail Lokasi Peserta Undangan (Kosong Awalnya) -->
         <div class="space-y-2.5" id="participant-locations-list">
           <div class="p-6 rounded-2xl bg-white/[0.02] border border-white/5 text-center space-y-2">
             <i data-lucide="radar" class="w-6 h-6 text-slate-500 mx-auto"></i>
             <p class="text-xs font-medium text-slate-300">Belum ada peserta terhubung</p>
-            <p class="text-[11px] text-slate-500 leading-relaxed">
-              Koordinat GPS & wilayah peserta akan otomatis muncul di sini setelah mereka menyetujui tautan undangan.
-            </p>
           </div>
         </div>
       </div>
 
-      <!-- KONTEN TAB 2: PRIVATE CHAT -->
+      <!-- TAB 2: CHAT -->
       <div id="tab-content-chat" class="hidden flex-1 flex flex-col overflow-hidden">
         <div id="chat-messages" class="flex-1 p-4 overflow-y-auto space-y-3 text-sm">
           <div class="text-center py-6">
@@ -497,8 +500,8 @@
           <span class="text-emerald-400 font-semibold text-base mt-0.5 block">Terenkripsi</span>
         </div>
       </div>
-      <button onclick="location.reload()" class="w-full py-3 rounded-xl bg-white/10 hover:bg-white/15 text-white font-medium text-sm transition">
-        Kembali ke Lobi WPCS
+      <button onclick="location.href = window.location.pathname" class="w-full py-3 rounded-xl bg-white/10 hover:bg-white/15 text-white font-medium text-sm transition">
+        Kembali ke Lobi Utama
       </button>
     </div>
   </section>
@@ -527,10 +530,29 @@
       hostLat: null,
       hostLng: null,
       userName: 'Anda (Host)',
-      invitedParticipants: [] // Kosong hingga peserta asli terhubung melalui backend/WebRTC
+      isGuest: false,
+      hostNameParam: 'Host',
+      invitedParticipants: []
     };
 
-    // Inisialisasi Kamera & Mikrofon Host
+    // Routing otomatis berdasarkan URL Query Parameters
+    window.addEventListener('DOMContentLoaded', () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const mode = urlParams.get('mode');
+      const host = urlParams.get('host');
+
+      if (mode === 'participant' || host) {
+        state.isGuest = true;
+        state.hostNameParam = host ? decodeURIComponent(host) : 'Host';
+        document.getElementById('guest-host-name').textContent = state.hostNameParam;
+        document.getElementById('lobby-screen').classList.add('hidden');
+        document.getElementById('guest-lobby-screen').classList.remove('hidden');
+      } else {
+        initMedia();
+      }
+      detectLocation();
+    });
+
     async function initMedia() {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
@@ -543,109 +565,98 @@
         state.camOn = false;
         document.getElementById('lobby-cam-status').textContent = 'Kamera tidak terdeteksi atau izin ditolak';
         const btn = document.getElementById('lobby-cam-btn');
-        btn.classList.add('bg-rose-600');
-        btn.innerHTML = `<i data-lucide="video-off" class="w-5 h-5"></i>`;
+        if (btn) {
+          btn.classList.add('bg-rose-600');
+          btn.innerHTML = `<i data-lucide="video-off" class="w-5 h-5"></i>`;
+        }
         lucide.createIcons();
       }
     }
-    initMedia();
 
-    function detectHostLocation() {
+    function detectLocation() {
       if ('geolocation' in navigator) {
         navigator.geolocation.getCurrentPosition(
           (pos) => {
             state.hostLat = pos.coords.latitude;
             state.hostLng = pos.coords.longitude;
-            document.getElementById('host-gps-status').textContent = 'Host GPS: Terkunci';
-            document.getElementById('host-coords-text').textContent = 
-              `Koordinat Host Anda: ${state.hostLat.toFixed(4)}, ${state.hostLng.toFixed(4)}`;
-            renderParticipantLocations();
+            const statusEl = document.getElementById('host-gps-status');
+            const coordsEl = document.getElementById('host-coords-text');
+            if (statusEl) statusEl.textContent = 'GPS: Terkunci';
+            if (coordsEl) coordsEl.textContent = `Koordinat Anda: ${state.hostLat.toFixed(4)}, ${state.hostLng.toFixed(4)}`;
           },
           () => {
             const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-            document.getElementById('host-gps-status').textContent = 'Host: Zona Waktu';
-            document.getElementById('host-coords-text').textContent = `Zona Waktu Host: ${tz}`;
-            renderParticipantLocations();
+            const statusEl = document.getElementById('host-gps-status');
+            const coordsEl = document.getElementById('host-coords-text');
+            if (statusEl) statusEl.textContent = 'Zona Waktu';
+            if (coordsEl) coordsEl.textContent = `Zona Waktu: ${tz}`;
           }
         );
       }
     }
 
-    // Hitung jarak Haversine (km) antara Host dan Peserta
-    function calcDistanceKm(lat1, lon1, lat2, lon2) {
-      if (lat1 === null || lon1 === null) return null;
-      const R = 6371;
-      const dLat = (lat2 - lat1) * Math.PI / 180;
-      const dLon = (lon2 - lon1) * Math.PI / 180;
-      const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                Math.sin(dLon / 2) * Math.sin(dLon / 2);
-      return Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
-    }
+    function startCall() {
+      const nameInput = document.getElementById('user-name-input').value.trim();
+      if (nameInput) state.userName = nameInput;
 
-    function renderParticipantLocations() {
-      const container = document.getElementById('participant-locations-list');
-      
-      if (state.invitedParticipants.length === 0) {
-        container.innerHTML = `
-          <div class="p-6 rounded-2xl bg-white/[0.02] border border-white/5 text-center space-y-2">
-            <i data-lucide="radar" class="w-6 h-6 text-slate-500 mx-auto"></i>
-            <p class="text-xs font-medium text-slate-300">Belum ada peserta terhubung</p>
-            <p class="text-[11px] text-slate-500 leading-relaxed">
-              Koordinat GPS & wilayah peserta akan otomatis muncul di sini setelah mereka menyetujui tautan undangan.
-            </p>
-          </div>
-        `;
-        lucide.createIcons();
-        return;
+      document.getElementById('local-name-badge').textContent = state.userName;
+      document.getElementById('local-initials').textContent = getInitials(state.userName);
+      document.getElementById('role-badge').textContent = 'HOST';
+
+      const localVideo = document.getElementById('local-video');
+      if (state.localStream && state.camOn) {
+        localVideo.srcObject = state.localStream;
+      } else {
+        document.getElementById('local-video-off').classList.remove('hidden');
       }
 
-      container.innerHTML = '';
-      state.invitedParticipants.forEach((p) => {
-        const dist = calcDistanceKm(state.hostLat, state.hostLng, p.lat, p.lng);
-        const distBadge = dist !== null ? `${dist.toLocaleString('id-ID')} km dari Anda` : p.tz;
-        const mapsUrl = `https://www.google.com/maps?q=${p.lat},${p.lng}`;
+      updateControlButtons();
+      document.getElementById('lobby-screen').classList.add('hidden');
+      document.getElementById('call-screen').classList.remove('hidden');
 
-        const card = document.createElement('div');
-        card.className = 'p-3.5 rounded-2xl bg-white/5 border border-white/10 hover:border-cyan-400/40 transition space-y-2';
-        card.innerHTML = `
-          <div class="flex items-start justify-between gap-2">
-            <div>
-              <div class="flex items-center gap-1.5">
-                <span class="font-semibold text-xs text-white">${escapeHtml(p.name)}</span>
-                <span class="px-1.5 py-0.5 rounded text-[9px] font-medium ${p.verified ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30' : 'bg-amber-500/15 text-amber-300 border border-amber-500/30'}">
-                  ${escapeHtml(p.method)}
-                </span>
-              </div>
-            </div>
-          </div>
+      startCallTimer();
+      initDraggablePiP();
+    }
 
-          <div class="bg-obsidian-950/80 rounded-xl p-2.5 text-[11px] space-y-1 border border-white/5">
-            <div class="flex items-center justify-between text-slate-200">
-              <span class="flex items-center gap-1.5 font-medium">
-                <i data-lucide="map-pin" class="w-3.5 h-3.5 text-cyan-400"></i>
-                ${escapeHtml(p.city)}
-              </span>
-              <span class="text-[10px] text-cyan-300">${distBadge}</span>
-            </div>
-            <div class="flex items-center justify-between text-[10px] font-mono text-slate-400 pt-1 border-t border-white/5">
-              <span>${p.lat.toFixed(4)}, ${p.lng.toFixed(4)}</span>
-              <a href="${mapsUrl}" target="_blank" rel="noopener noreferrer" class="text-cyan-400 hover:underline flex items-center gap-1">
-                <span>Buka Peta</span>
-                <i data-lucide="external-link" class="w-2.5 h-2.5"></i>
-              </a>
-            </div>
-          </div>
-        `;
-        container.appendChild(card);
+    function joinAsGuest() {
+      const guestName = document.getElementById('guest-name-input').value.trim();
+      if (!guestName) {
+        alert('Mohon masukkan nama Anda terlebih dahulu.');
+        return;
+      }
+      state.userName = guestName;
+      document.getElementById('local-name-badge').textContent = state.userName;
+      document.getElementById('local-initials').textContent = getInitials(state.userName);
+      document.getElementById('role-badge').textContent = 'PESERTA';
+      
+      // Sembunyikan tombol salin link untuk peserta biasa
+      const copyBtn = document.getElementById('copy-link-btn');
+      if (copyBtn) copyBtn.style.display = 'none';
+
+      initMedia().then(() => {
+        const localVideo = document.getElementById('local-video');
+        if (state.localStream && state.camOn) {
+          localVideo.srcObject = state.localStream;
+        } else {
+          document.getElementById('local-video-off').classList.remove('hidden');
+        }
+
+        updateControlButtons();
+        document.getElementById('guest-lobby-screen').classList.add('hidden');
+        document.getElementById('call-screen').classList.remove('hidden');
+
+        startCallTimer();
+        initDraggablePiP();
       });
-      lucide.createIcons();
+    }
+
+    function getInitials(name) {
+      return name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase() || 'US';
     }
 
     function copyInviteLink() {
-      const requireGeo = document.getElementById('require-geo-toggle').checked ? 'required' : 'optional';
-      const baseUrl = window.location.protocol === 'file:' ? 'https://wpcs.local' : window.location.origin;
-      const link = `${baseUrl}/wpcs-room?host=${encodeURIComponent(state.userName)}&geo=${requireGeo}`;
+      const cleanOrigin = window.location.origin + window.location.pathname;
+      const link = `${cleanOrigin}?host=${encodeURIComponent(state.userName)}&mode=participant`;
       
       if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(link).then(() => {
@@ -683,62 +694,6 @@
         console.error('Gagal menyalin tautan', err);
       }
       document.body.removeChild(textArea);
-    }
-
-    function toggleLobbyMic() {
-      state.micOn = !state.micOn;
-      if (state.localStream) state.localStream.getAudioTracks().forEach(t => t.enabled = state.micOn);
-      const btn = document.getElementById('lobby-mic-btn');
-      btn.classList.toggle('bg-rose-600', !state.micOn);
-      btn.innerHTML = `<i data-lucide="${state.micOn ? 'mic' : 'mic-off'}" class="w-5 h-5"></i>`;
-      lucide.createIcons();
-    }
-
-    function toggleLobbyCam() {
-      state.camOn = !state.camOn;
-      if (state.localStream) state.localStream.getVideoTracks().forEach(t => t.enabled = state.camOn);
-      const lobbyVideo = document.getElementById('lobby-video');
-      const fallback = document.getElementById('lobby-fallback');
-      if (state.camOn && state.localStream) {
-        lobbyVideo.classList.remove('hidden');
-        fallback.classList.add('hidden');
-      } else {
-        lobbyVideo.classList.add('hidden');
-        fallback.classList.remove('hidden');
-      }
-      const btn = document.getElementById('lobby-cam-btn');
-      btn.classList.toggle('bg-rose-600', !state.camOn);
-      btn.innerHTML = `<i data-lucide="${state.camOn ? 'video' : 'video-off'}" class="w-5 h-5"></i>`;
-      lucide.createIcons();
-    }
-
-    function startCall() {
-      const nameInput = document.getElementById('user-name-input').value.trim();
-      if (nameInput) state.userName = nameInput;
-
-      document.getElementById('local-name-badge').textContent = state.userName;
-      document.getElementById('local-initials').textContent = getInitials(state.userName);
-
-      const localVideo = document.getElementById('local-video');
-      if (state.localStream && state.camOn) {
-        localVideo.srcObject = state.localStream;
-      } else {
-        document.getElementById('local-video-off').classList.remove('hidden');
-      }
-
-      updateControlButtons();
-      detectHostLocation();
-      renderParticipantLocations();
-
-      document.getElementById('lobby-screen').classList.add('hidden');
-      document.getElementById('call-screen').classList.remove('hidden');
-
-      startCallTimer();
-      initDraggablePiP();
-    }
-
-    function getInitials(name) {
-      return name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase() || 'HS';
     }
 
     function initDraggablePiP() {
@@ -835,7 +790,7 @@
           btn.classList.add('bg-cyan-500', 'text-obsidian-950');
           screenStream.getVideoTracks()[0].onended = () => stopScreenShare();
         } catch (err) {
-          console.log('Berbagi layar dibatalkan:', err);
+          console.log('Berbagi layar dibatalkan');
         }
       } else {
         stopScreenShare();
